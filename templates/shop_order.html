@@ -139,6 +139,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);background-size:cover;b
       <div class="info">
         <div class="name">{{ p.name }} {% if d_stock>0 %}<span style="color:var(--accent-green);font-size:11px;font-weight:600">متوفر</span>{% else %}<span style="color:var(--accent-red);font-size:11px;font-weight:600">غير متوفر</span>{% endif %}</div>
         <div class="price"><strong>{{ '%.2f'|format(d_price) }} د.ج</strong> / {{ d_unit }}</div>
+        {% if p.unit_wholesale and shop.type=='تاجر تجزئة' %}<div style="color:var(--text-dim);font-size:11px;margin-top:1px">🟦 الكرتون = {{ p.qty_per_carton }} {{ p.unit }}</div>{% endif %}
       </div>
       <div class="controls">
         {% if d_stock > 0 %}
