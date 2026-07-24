@@ -36,12 +36,11 @@ with app.app_context():
     order_cols = [c['name'] for c in inspector.get_columns('orders')]
     if 'order_number' not in order_cols:
         db.session.execute(text("ALTER TABLE orders ADD COLUMN order_number INTEGER"))
-    null_orders = db.session.query(Order).filter(Order.order_number.is_(None)).order_by(Order.created_at, Order.id).all()
-    if null_orders:
-        from sqlalchemy import case
-        for i, o in enumerate(null_orders, 1):
-            o.order_number = i
-    db.session.commit()
+        db.session.commit()
+        all_ids = db.session.execute(text("SELECT id FROM orders ORDER BY created_at, id")).fetchall()
+        for i, (oid,) in enumerate(all_ids, 1):
+            db.session.execute(text("UPDATE orders SET order_number = :num WHERE id = :oid"), {'num': i, 'oid': oid})
+        db.session.commit()
 
 class Admin(db.Model):
     __tablename__ = 'admins'
