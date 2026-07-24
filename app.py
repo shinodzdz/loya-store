@@ -109,6 +109,15 @@ def init_db():
 
 with app.app_context():
     init_db()
+    try:
+        from sqlalchemy import inspect, text
+        inspector = inspect(db.engine)
+        prod_cols = [c['name'] for c in inspector.get_columns('products')]
+        if 'image_url' not in prod_cols:
+            db.session.execute(text("ALTER TABLE products ADD COLUMN image_url VARCHAR(500)"))
+            db.session.commit()
+    except:
+        db.session.rollback()
 
 def get_public_url():
     if app.config['PUBLIC_URL']:
