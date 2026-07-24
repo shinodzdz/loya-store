@@ -124,14 +124,24 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);background-size:cover;b
       {% set current_cat = p.category %}
       <div class="cat-title"><div class="dot"></div><span>{{ p.category }}</span></div>
     {% endif %}
-    {% set prod_price = p.price_semi if shop.type=='تاجر تجزئة' and p.price_semi > 0 else p.price %}
-    <div class="product {{ 'out-of-stock' if p.stock==0 }}" data-cat="{{ p.category }}" data-id="{{ p.id }}" data-name="{{ p.name }}" data-price="{{ prod_price }}" data-unit="{{ p.unit }}" data-stock="{{ p.stock }}">
+    {% if shop.type=='تاجر جملة' and p.unit_wholesale %}
+      {% set d_price = p.price %}
+      {% set d_unit = p.unit_wholesale %}
+      {% set d_stock = (p.stock // p.qty_per_carton) if p.qty_per_carton and p.stock else 0 %}
+      {% set d_mult = p.qty_per_carton %}
+    {% else %}
+      {% set d_price = p.price_semi if shop.type=='تاجر تجزئة' and p.price_semi > 0 else p.price %}
+      {% set d_unit = p.unit %}
+      {% set d_stock = p.stock %}
+      {% set d_mult = 1 %}
+    {% endif %}
+    <div class="product {{ 'out-of-stock' if d_stock==0 }}" data-cat="{{ p.category }}" data-id="{{ p.id }}" data-name="{{ p.name }}" data-price="{{ d_price }}" data-unit="{{ d_unit }}" data-stock="{{ d_stock }}" data-mult="{{ d_mult }}">
       <div class="info">
-        <div class="name">{{ p.name }} {% if p.stock>0 %}<span style="color:var(--accent-green);font-size:11px;font-weight:600">متوفر</span>{% else %}<span style="color:var(--accent-red);font-size:11px;font-weight:600">غير متوفر</span>{% endif %}</div>
-        <div class="price"><strong>{{ '%.2f'|format(prod_price) }} د.ج</strong> / {{ p.unit }}</div>
+        <div class="name">{{ p.name }} {% if d_stock>0 %}<span style="color:var(--accent-green);font-size:11px;font-weight:600">متوفر</span>{% else %}<span style="color:var(--accent-red);font-size:11px;font-weight:600">غير متوفر</span>{% endif %}</div>
+        <div class="price"><strong>{{ '%.2f'|format(d_price) }} د.ج</strong> / {{ d_unit }}</div>
       </div>
       <div class="controls">
-        {% if p.stock > 0 %}
+        {% if d_stock > 0 %}
         <button class="btn-minus" onclick="changeQty(this,-1)">−</button>
         <input class="qty" type="number" value="0" min="0" step="0.5">
         <button class="btn-plus" onclick="changeQty(this,1)">+</button>

@@ -29,6 +29,10 @@ with app.app_context():
         db.session.execute(text('ALTER TABLE products ADD COLUMN price_semi FLOAT DEFAULT 0'))
     if 'type' not in shop_cols:
         db.session.execute(text("ALTER TABLE shops ADD COLUMN type VARCHAR(20) DEFAULT 'تاجر جملة'"))
+    if 'unit_wholesale' not in prod_cols:
+        db.session.execute(text("ALTER TABLE products ADD COLUMN unit_wholesale VARCHAR(50)"))
+    if 'qty_per_carton' not in prod_cols:
+        db.session.execute(text("ALTER TABLE products ADD COLUMN qty_per_carton INTEGER DEFAULT 1"))
     db.session.commit()
 
 class Admin(db.Model):
@@ -47,6 +51,8 @@ class Product(db.Model):
     category = db.Column(db.String(100), default='عام')
     available = db.Column(db.Integer, default=1)
     stock = db.Column(db.Float, default=0)
+    unit_wholesale = db.Column(db.String(50), nullable=True)
+    qty_per_carton = db.Column(db.Integer, default=1)
 
 class Shop(db.Model):
     __tablename__ = 'shops'
@@ -163,7 +169,9 @@ def manage_products():
         unit = request.form.get('unit', 'قطعة')
         category = request.form.get('category', 'عام')
         stock = float(request.form.get('stock', 0))
-        db.session.add(Product(name=name, price=price, price_semi=price_semi, unit=unit, category=category, stock=stock))
+        unit_wholesale = request.form.get('unit_wholesale') or None
+        qty_per_carton = int(request.form.get('qty_per_carton', 1) or 1)
+        db.session.add(Product(name=name, price=price, price_semi=price_semi, unit=unit, category=category, stock=stock, unit_wholesale=unit_wholesale, qty_per_carton=qty_per_carton))
         db.session.commit()
     products = Product.query.order_by(Product.category, Product.name).all()
     return render_template('products.html', products=products)
@@ -210,6 +218,8 @@ def edit_product(id):
         product.unit = request.form.get('unit', 'قطعة')
         product.category = request.form.get('category', 'عام')
         product.stock = float(request.form.get('stock', 0))
+        product.unit_wholesale = request.form.get('unit_wholesale') or None
+        product.qty_per_carton = int(request.form.get('qty_per_carton', 1) or 1)
         db.session.commit()
         return redirect(url_for('manage_products'))
     return render_template('product_edit.html', product=product)
@@ -377,6 +387,10 @@ def import_excel():
                         col_map['price_semi'] = h
                     elif hl in ('الوحدة', 'وحدة', 'unit'):
                         col_map['unit'] = h
+                    elif hl in ('وحدة الجملة', 'unit_wholesale'):
+                        col_map['unit_wholesale'] = h
+                    elif hl in ('عدد العلب', 'عدد', 'qty_per_carton'):
+                        col_map['qty_per_carton'] = h
                     elif hl in ('التصنيف', 'تصنيف', 'category'):
                         col_map['category'] = h
                     elif hl in ('المخزون', 'مخزون', 'stock'):
@@ -391,7 +405,9 @@ def import_excel():
                     unit = vals[headers.index(col_map['unit'])] if 'unit' in col_map else 'قطعة'
                     category = vals[headers.index(col_map['category'])] if 'category' in col_map else 'عام'
                     stock = int(float(vals[headers.index(col_map['stock'])])) if 'stock' in col_map and vals[headers.index(col_map['stock'])] else 0
-                    db.session.add(Product(name=name, price=price, price_semi=price_semi, unit=unit, category=category, stock=stock))
+                    unit_wholesale = vals[headers.index(col_map['unit_wholesale'])] if 'unit_wholesale' in col_map and vals[headers.index(col_map['unit_wholesale'])] else None
+                    qty_per_carton = int(float(vals[headers.index(col_map['qty_per_carton'])])) if 'qty_per_carton' in col_map and vals[headers.index(col_map['qty_per_carton'])] else 1
+                    db.session.add(Product(name=name, price=price, price_semi=price_semi, unit=unit, category=category, stock=stock, unit_wholesale=unit_wholesale, qty_per_carton=qty_per_carton))
                     added += 1
             elif import_type == 'shops':
                 for row in rows[1:]:
@@ -523,7 +539,10 @@ def update_status(id):
             for item in items:
                 prod = Product.query.filter_by(name=item.product_name).first()
                 if prod:
-                    prod.stock = max(0, prod.stock - item.quantity)
+                    qty = item.quantity
+                    if prod.unit_wholesale and item.unit == prod.unit_wholesale:
+                        qty = qty * (prod.qty_per_carton or 1)
+                    prod.stock = max(0, prod.stock - qty)
         db.session.commit()
     return redirect(url_for('view_orders'))
 

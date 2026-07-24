@@ -77,6 +77,10 @@ input:focus{outline:none;border-color:var(--accent)}
       <input type="number" step="0.5" name="stock" value="{{ product.stock or 0 }}">
       <label>الوحدة</label>
       <input type="text" name="unit" value="{{ product.unit }}">
+      <label>وحدة الجملة (اختياري — اتركه فارغاً إن لم يكن)</label>
+      <input type="text" name="unit_wholesale" value="{{ product.unit_wholesale or '' }}">
+      <label>عدد العلب في الكرتون</label>
+      <input type="number" name="qty_per_carton" value="{{ product.qty_per_carton or 1 }}" min="1">
       <label>التصنيف</label>
       <input type="text" name="category" value="{{ product.category }}">
       <div class="btn-row">
