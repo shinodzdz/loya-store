@@ -48,6 +48,7 @@ td{padding:10px 8px;border-bottom:1px solid var(--border-light);color:var(--text
 .badge-new{background:rgba(35,134,54,0.2);color:var(--accent-green)}
 .badge-ready{background:rgba(31,111,235,0.2);color:var(--accent)}
 .badge-done{background:rgba(48,54,61,0.5);color:var(--text-dim)}
+.badge-preparing{background:rgba(31,111,235,0.15);color:var(--accent)}
 .btn-sm{padding:6px 14px;border-radius:8px;font-size:12px;text-decoration:none;font-weight:600;transition:all 0.2s;display:inline-block}
 .btn-view{background:var(--btn-hover);color:var(--accent)}
 .btn-view:hover{opacity:0.8}
@@ -92,11 +93,12 @@ td,th{padding:5px 3px}
     {% endif %}
     {% if orders %}
     <table>
-      <tr><th>#</th><th>المحل</th><th>الهاتف</th><th>الإجمالي</th><th>التاريخ</th><th>الحالة</th><th></th></tr>
+      <tr><th>#</th><th>المحل</th><th>النوع</th><th>الهاتف</th><th>الإجمالي</th><th>التاريخ</th><th>الحالة</th><th></th></tr>
       {% for o in orders %}
       <tr>
         <td style="color:var(--text-dim)">{{ o.id }}</td>
         <td style="font-weight:600">{{ o.shop.name }}</td>
+        <td><span class="badge badge-{{ 'new' if o.shop.type=='تاجر جملة' else 'preparing' }}">{{ o.shop.type }}</span></td>
         <td style="color:var(--text-muted);font-size:12px">{{ o.shop.phone or '-' }}</td>
         <td class="total">{{ '%.2f'|format(o.total) }} د.ج</td>
         <td style="color:var(--text-dim);font-size:12px">{{ o.created_at }}</td>
