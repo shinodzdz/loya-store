@@ -118,16 +118,16 @@ td,th{padding:5px 3px}
 <div class="container">
   <div class="card">
     <h2>➕ إضافة منتج جديد</h2>
-    <form method="POST">
-      <input type="text" name="name" placeholder="اسم المنتج" required style="width:140px">
-      <input type="number" step="0.01" name="price" placeholder="سعر الجملة" required style="width:100px">
-      <input type="number" step="0.01" name="price_semi" placeholder="سعر التجزئة" value="0" style="width:120px">
-      <input type="number" step="0.5" name="stock" placeholder="المخزون" value="0" style="width:90px">
-      <input type="text" name="unit" placeholder="الوحدة" value="قطعة" style="width:90px">
-      <input type="text" name="unit_wholesale" placeholder="وحدة الجملة (اختياري)" style="width:110px">
-      <input type="number" name="qty_per_carton" placeholder="عدد العلب" value="1" style="width:80px">
-      <input type="text" name="category" placeholder="التصنيف" value="عام" style="width:80px">
-      <button type="submit" class="btn-add">إضافة</button>
+    <form method="POST" style="display:flex;flex-wrap:wrap;gap:8px;align-items:end">
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">المنتج</label><input type="text" name="name" placeholder="اسم المنتج" required style="width:140px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">سعر الجملة</label><input type="number" step="0.01" name="price" placeholder="0.00" required style="width:100px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">سعر التجزئة</label><input type="number" step="0.01" name="price_semi" placeholder="0.00" value="0" style="width:100px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">المخزون</label><input type="number" step="0.5" name="stock" placeholder="0" value="0" style="width:80px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">الوحدة</label><input type="text" name="unit" placeholder="قطعة" value="قطعة" style="width:80px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">وحدة الجملة</label><input type="text" name="unit_wholesale" placeholder="اختياري" style="width:100px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">عدد/كرتون</label><input type="number" name="qty_per_carton" placeholder="1" value="1" style="width:70px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">التصنيف</label><input type="text" name="category" placeholder="عام" value="عام" style="width:80px"></div>
+      <button type="submit" class="btn-add" style="height:fit-content">إضافة</button>
     </form>
     <div style="margin-top:10px;text-align:center;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
       <a href="{{ url_for('import_excel') }}" style="padding:8px 18px;background:var(--btn-hover);border:none;border-radius:10px;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block">📥 استيراد من Excel</a>
