@@ -126,6 +126,7 @@ td,th{padding:5px 3px}
       <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">الوحدة</label><input type="text" name="unit" placeholder="قطعة" value="قطعة" style="width:80px"></div>
       <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">وحدة الجملة</label><input type="text" name="unit_wholesale" placeholder="اختياري" style="width:100px"></div>
       <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">عدد/كرتون</label><input type="number" name="qty_per_carton" placeholder="1" value="1" style="width:70px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">رابط الصورة</label><input type="url" name="image_url" placeholder="https://..." style="width:130px"></div>
       <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">التصنيف</label><input type="text" name="category" placeholder="عام" value="عام" style="width:80px"></div>
       <button type="submit" class="btn-add" style="height:fit-content">إضافة</button>
     </form>
@@ -151,10 +152,11 @@ td,th{padding:5px 3px}
       <button type="submit" class="btn-sm btn-del" style="padding:6px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'Cairo',sans-serif">🗑️ حذف المحدد</button>
     </form>
     <table>
-      <tr><th></th><th>الاسم</th><th>سعر الجملة</th><th>سعر التجزئة</th><th>المخزون</th><th>الوحدة</th><th>وحدة الجملة</th><th>عدد/كرتون</th><th>التصنيف</th><th>الحالة</th><th></th></tr>
+      <tr><th></th><th>الصورة</th><th>الاسم</th><th>سعر الجملة</th><th>سعر التجزئة</th><th>المخزون</th><th>الوحدة</th><th>وحدة الجملة</th><th>عدد/كرتون</th><th>التصنيف</th><th>الحالة</th><th></th></tr>
       {% for p in products %}
       <tr data-cat="{{ p.category|replace('"','') }}">
         <td><input type="checkbox" name="ids" value="{{ p.id }}" class="sel" form="bulkForm" style="width:auto"></td>
+        <td>{% if p.image_url %}<img src="{{ p.image_url }}" alt="" style="width:36px;height:36px;border-radius:8px;object-fit:cover">{% else %}<span style="color:var(--text-dim);font-size:18px">📦</span>{% endif %}</td>
         <td style="font-weight:600">{{ p.name }}</td>
         <td>{{ '%.2f'|format(p.price) }} د.ج</td>
         <td style="color:var(--text-muted)">{{ '%.2f'|format(p.price_semi) if p.price_semi > 0 else '—' }} د.ج</td>

@@ -81,6 +81,9 @@ input:focus{outline:none;border-color:var(--accent)}
       <input type="text" name="unit_wholesale" value="{{ product.unit_wholesale or '' }}">
       <label>عدد العلب في الكرتون</label>
       <input type="number" name="qty_per_carton" value="{{ product.qty_per_carton or 1 }}" min="1">
+      <label>رابط صورة المنتج (اختياري)</label>
+      <input type="url" name="image_url" value="{{ product.image_url or '' }}" placeholder="https://...">
+      {% if product.image_url %}<div style="margin-bottom:10px"><img src="{{ product.image_url }}" alt="" style="width:60px;height:60px;border-radius:8px;object-fit:cover"></div>{% endif %}
       <label>التصنيف</label>
       <input type="text" name="category" value="{{ product.category }}">
       <div class="btn-row">

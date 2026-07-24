@@ -136,6 +136,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);background-size:cover;b
       {% set d_mult = 1 %}
     {% endif %}
     <div class="product {{ 'out-of-stock' if d_stock==0 }}" data-cat="{{ p.category }}" data-id="{{ p.id }}" data-name="{{ p.name }}" data-price="{{ d_price }}" data-unit="{{ d_unit }}" data-stock="{{ d_stock }}" data-mult="{{ d_mult }}">
+      {% if p.image_url %}<img src="{{ p.image_url }}" alt="" style="width:40px;height:40px;border-radius:10px;object-fit:cover;margin-left:10px;flex-shrink:0">{% endif %}
       <div class="info">
         <div class="name">{{ p.name }} {% if d_stock>0 %}<span style="color:var(--accent-green);font-size:11px;font-weight:600">متوفر</span>{% else %}<span style="color:var(--accent-red);font-size:11px;font-weight:600">غير متوفر</span>{% endif %}</div>
         <div class="price"><strong>{{ '%.2f'|format(d_price) }} د.ج</strong> / {{ d_unit }}</div>

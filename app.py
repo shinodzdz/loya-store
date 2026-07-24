@@ -33,6 +33,8 @@ with app.app_context():
         db.session.execute(text("ALTER TABLE products ADD COLUMN unit_wholesale VARCHAR(50)"))
     if 'qty_per_carton' not in prod_cols:
         db.session.execute(text("ALTER TABLE products ADD COLUMN qty_per_carton INTEGER DEFAULT 1"))
+    if 'image_url' not in prod_cols:
+        db.session.execute(text("ALTER TABLE products ADD COLUMN image_url VARCHAR(500)"))
     order_cols = [c['name'] for c in inspector.get_columns('orders')]
     if 'order_number' not in order_cols:
         db.session.execute(text("ALTER TABLE orders ADD COLUMN order_number INTEGER"))
@@ -60,6 +62,7 @@ class Product(db.Model):
     stock = db.Column(db.Float, default=0)
     unit_wholesale = db.Column(db.String(50), nullable=True)
     qty_per_carton = db.Column(db.Integer, default=1)
+    image_url = db.Column(db.String(500), nullable=True)
 
 class Shop(db.Model):
     __tablename__ = 'shops'
@@ -179,7 +182,8 @@ def manage_products():
         stock = float(request.form.get('stock', 0))
         unit_wholesale = request.form.get('unit_wholesale') or None
         qty_per_carton = int(request.form.get('qty_per_carton', 1) or 1)
-        db.session.add(Product(name=name, price=price, price_semi=price_semi, unit=unit, category=category, stock=stock, unit_wholesale=unit_wholesale, qty_per_carton=qty_per_carton))
+        image_url = request.form.get('image_url') or None
+        db.session.add(Product(name=name, price=price, price_semi=price_semi, unit=unit, category=category, stock=stock, unit_wholesale=unit_wholesale, qty_per_carton=qty_per_carton, image_url=image_url))
         db.session.commit()
     products = Product.query.order_by(Product.category, Product.name).all()
     return render_template('products.html', products=products)
@@ -228,6 +232,7 @@ def edit_product(id):
         product.stock = float(request.form.get('stock', 0))
         product.unit_wholesale = request.form.get('unit_wholesale') or None
         product.qty_per_carton = int(request.form.get('qty_per_carton', 1) or 1)
+        product.image_url = request.form.get('image_url') or None
         db.session.commit()
         return redirect(url_for('manage_products'))
     return render_template('product_edit.html', product=product)
@@ -399,6 +404,8 @@ def import_excel():
                         col_map['unit_wholesale'] = h
                     elif hl in ('عدد العلب', 'عدد', 'qty_per_carton'):
                         col_map['qty_per_carton'] = h
+                    elif hl in ('رابط الصورة', 'صورة', 'image_url', 'image'):
+                        col_map['image_url'] = h
                     elif hl in ('التصنيف', 'تصنيف', 'category'):
                         col_map['category'] = h
                     elif hl in ('المخزون', 'مخزون', 'stock'):
@@ -420,7 +427,8 @@ def import_excel():
                     stock = int(float(vals[headers.index(col_map['stock'])])) if 'stock' in col_map and vals[headers.index(col_map['stock'])] else 0
                     unit_wholesale = vals[headers.index(col_map['unit_wholesale'])] if 'unit_wholesale' in col_map and vals[headers.index(col_map['unit_wholesale'])] else None
                     qty_per_carton = int(float(vals[headers.index(col_map['qty_per_carton'])])) if 'qty_per_carton' in col_map and vals[headers.index(col_map['qty_per_carton'])] else 1
-                    db.session.add(Product(name=name, price=price, price_semi=price_semi, unit=unit, category=category, stock=stock, unit_wholesale=unit_wholesale, qty_per_carton=qty_per_carton))
+                    image_url = vals[headers.index(col_map['image_url'])] if 'image_url' in col_map and vals[headers.index(col_map['image_url'])] else None
+                    db.session.add(Product(name=name, price=price, price_semi=price_semi, unit=unit, category=category, stock=stock, unit_wholesale=unit_wholesale, qty_per_carton=qty_per_carton, image_url=image_url))
                     added += 1
                 if added == 0:
                     return render_template('import.html', error=f'لم يتم استيراد أي منتج. الأعمدة التي تم التعرف عليها: {found}. تأكد أن البيانات تبدأ من الصف الثاني.')
