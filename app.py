@@ -395,9 +395,14 @@ def import_excel():
                         col_map['category'] = h
                     elif hl in ('المخزون', 'مخزون', 'stock'):
                         col_map['stock'] = h
+                if not col_map:
+                    return render_template('import.html', error='لم يتم التعرف على أي عمود. تأكد أن الصف الأول يحتوي على عناوين الأعمدة مثل: الاسم، سعر الجملة، سعر التجزئة، المخزون...')
+                if 'name' not in col_map:
+                    return render_template('import.html', error='لم يتم العثور على عمود "الاسم" أو "name". تأكد من تسمية العمود.')
+                found = ', '.join(f'"{k}"' for k in col_map)
                 for row in rows[1:]:
                     vals = [str(v).strip() if v else '' for v in row]
-                    name = vals[headers.index(col_map['name'])] if 'name' in col_map else ''
+                    name = vals[headers.index(col_map['name'])]
                     if not name:
                         continue
                     price = float(vals[headers.index(col_map['price'])]) if 'price' in col_map and vals[headers.index(col_map['price'])] else 0
@@ -409,6 +414,8 @@ def import_excel():
                     qty_per_carton = int(float(vals[headers.index(col_map['qty_per_carton'])])) if 'qty_per_carton' in col_map and vals[headers.index(col_map['qty_per_carton'])] else 1
                     db.session.add(Product(name=name, price=price, price_semi=price_semi, unit=unit, category=category, stock=stock, unit_wholesale=unit_wholesale, qty_per_carton=qty_per_carton))
                     added += 1
+                if added == 0:
+                    return render_template('import.html', error=f'لم يتم استيراد أي منتج. الأعمدة التي تم التعرف عليها: {found}. تأكد أن البيانات تبدأ من الصف الثاني.')
             elif import_type == 'shops':
                 for row in rows[1:]:
                     vals = [str(v).strip() if v else '' for v in row]
