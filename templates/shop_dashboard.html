@@ -75,7 +75,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);background-size:cover;b
         {% for o in orders[:5] %}
         <div class="order-item">
           <div class="left">
-            <span class="id">طلب #<span>{{ o.id }}</span></span>
+            <span class="id">طلب #<span>{{ o.order_number or o.id }}</span></span>
             {% set s = o.status %}
             {% if s == 'جديد' %}<span class="badge badge-new">🆕 جديد</span>
             {% elif s == 'قيد التحضير' %}<span class="badge badge-preparing">⏳ قيد التحضير</span>

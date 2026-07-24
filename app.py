@@ -33,6 +33,14 @@ with app.app_context():
         db.session.execute(text("ALTER TABLE products ADD COLUMN unit_wholesale VARCHAR(50)"))
     if 'qty_per_carton' not in prod_cols:
         db.session.execute(text("ALTER TABLE products ADD COLUMN qty_per_carton INTEGER DEFAULT 1"))
+    order_cols = [c['name'] for c in inspector.get_columns('orders')]
+    if 'order_number' not in order_cols:
+        db.session.execute(text("ALTER TABLE orders ADD COLUMN order_number INTEGER"))
+    null_orders = db.session.query(Order).filter(Order.order_number.is_(None)).order_by(Order.created_at, Order.id).all()
+    if null_orders:
+        from sqlalchemy import case
+        for i, o in enumerate(null_orders, 1):
+            o.order_number = i
     db.session.commit()
 
 class Admin(db.Model):
@@ -70,6 +78,7 @@ class Order(db.Model):
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.id'), nullable=False)
     shop_name = db.Column(db.String(200))
     notes = db.Column(db.Text)
+    order_number = db.Column(db.Integer)
     total = db.Column(db.Float, default=0)
     status = db.Column(db.String(50), default='جديد')
     created_at = db.Column(db.DateTime, default=datetime.now)
@@ -494,7 +503,8 @@ def submit_order():
         return jsonify({'success': False, 'error': 'كود غير صحيح'})
 
     total = sum(float(item['price']) * float(item['qty']) for item in items)
-    order = Order(shop_id=shop.id, shop_name=shop.name, notes=notes, total=total)
+    last_num = db.session.query(db.func.max(Order.order_number)).scalar() or 0
+    order = Order(shop_id=shop.id, shop_name=shop.name, notes=notes, total=total, order_number=last_num + 1)
     db.session.add(order)
     db.session.flush()
 
@@ -508,7 +518,7 @@ def submit_order():
         ))
 
     db.session.commit()
-    return jsonify({'success': True, 'order_id': order.id})
+    return jsonify({'success': True, 'order_number': order.order_number, 'order_id': order.id})
 
 # ─── View Orders ───
 

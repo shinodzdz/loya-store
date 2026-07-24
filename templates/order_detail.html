@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>الطلب #{{ order.id }} - {{ shop_name }}</title>
+<title>الطلب #{{ order.order_number or order.id }} - {{ shop_name }}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
 :root,[data-theme="dark"]{
@@ -81,7 +81,7 @@ td,th{padding:6px 4px}
   </div>
   <div style="display:flex;align-items:center">
     <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" title="تغيير الثيم">🌙</button>
-    <h1><span>{{ shop_name }}</span> — الطلب #{{ order.id }}</h1>
+    <h1><span>{{ shop_name }}</span> — الطلب #{{ order.order_number or order.id }}</h1>
   </div>
 </div>
 <div class="container">
@@ -139,7 +139,7 @@ td,th{padding:6px 4px}
   </div>
   <div class="card" style="border-color:rgba(218,54,51,0.2)">
     <h2 style="color:var(--accent-red)">🗑️ حذف الطلب</h2>
-    <form method="POST" action="{{ url_for('delete_order', id=order.id) }}" onsubmit="return confirm('حذف الطلب #{{ order.id }} نهائياً؟ لا يمكن التراجع!')">
+    <form method="POST" action="{{ url_for('delete_order', id=order.id) }}" onsubmit="return confirm('حذف الطلب #{{ order.order_number or order.id }} نهائياً؟ لا يمكن التراجع!')">
       <button type="submit" style="padding:12px 28px;background:rgba(218,54,51,0.2);border:1px solid rgba(218,54,51,0.3);border-radius:12px;color:var(--accent-red);font-size:15px;font-weight:700;cursor:pointer;font-family:'Cairo',sans-serif;width:100%;transition:all 0.2s">🗑️ حذف الطلب نهائياً</button>
     </form>
   </div>

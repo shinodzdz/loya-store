@@ -96,7 +96,7 @@ td,th{padding:5px 3px}
       <tr><th>#</th><th>المحل</th><th>النوع</th><th>الهاتف</th><th>الإجمالي</th><th>التاريخ</th><th>الحالة</th><th></th></tr>
       {% for o in orders %}
       <tr>
-        <td style="color:var(--text-dim)">{{ o.id }}</td>
+        <td style="color:var(--text-dim)">{{ o.order_number or o.id }}</td>
         <td style="font-weight:600">{{ o.shop.name }}</td>
         <td><span class="badge badge-{{ 'new' if o.shop.type=='تاجر جملة' else 'preparing' }}">{{ o.shop.type }}</span></td>
         <td style="color:var(--text-muted);font-size:12px">{{ o.shop.phone or '-' }}</td>
@@ -104,7 +104,7 @@ td,th{padding:5px 3px}
         <td style="color:var(--text-dim);font-size:12px">{{ o.created_at }}</td>
         <td><span class="badge badge-{{ 'new' if o.status=='جديد' else 'ready' if o.status=='جاهز' else 'done' }}">{{ o.status }}</span></td>
         <td><a href="{{ url_for('order_detail', id=o.id) }}" class="btn-sm btn-view">عرض</a>
-          <form method="POST" action="{{ url_for('delete_order', id=o.id) }}" style="display:inline" onsubmit="return confirm('حذف الطلب #{{ o.id }} نهائياً؟')">
+          <form method="POST" action="{{ url_for('delete_order', id=o.id) }}" style="display:inline" onsubmit="return confirm('حذف الطلب #{{ o.order_number or o.id }} نهائياً؟')">
             <button type="submit" class="btn-del-order">🗑️</button>
           </form>
         </td>

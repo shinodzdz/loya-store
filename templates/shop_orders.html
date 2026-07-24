@@ -64,7 +64,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);background-size:cover;b
       {% for o in orders %}
       <div class="card order-item" onclick="toggleDetails(this)">
         <div class="order-header">
-          <div><span class="order-id">طلب #<span>{{ o.id }}</span></span> <span class="order-date">{{ o.created_at }}</span></div>
+          <div><span class="order-id">طلب #<span>{{ o.order_number or o.id }}</span></span> <span class="order-date">{{ o.created_at }}</span></div>
           <div style="display:flex;align-items:center;gap:10px">
             <span class="order-total">{{ '%.2f'|format(o.total) }} د.ج</span>
             {% set s = o.status %}

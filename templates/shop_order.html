@@ -105,7 +105,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);background-size:cover;b
 </div>
 {% if last_order %}
 <div class="last-order">
-  <div><span class="label">آخر طلب (#{{ last_order.id }}) — </span><span class="val">{{ last_order.status }}</span></div>
+  <div><span class="label">آخر طلب (#{{ last_order.order_number or last_order.id }}) — </span><span class="val">{{ last_order.status }}</span></div>
   <a href="{{ url_for('shop_orders', code=shop.code) }}" class="link">عرض الكل</a>
 </div>
 {% endif %}
@@ -200,7 +200,7 @@ function showReview(){window._reviewItems=getItems();if(!window._reviewItems.len
 function renderReview(){var items=window._reviewItems;var h='';items.forEach(function(i,idx){h+='<div class="item"><span class="name">'+i.name+' × '+i.qty+' '+i.unit+'</span><span class="val">'+(i.price*i.qty).toFixed(2)+' د.ج</span><button class="btn-remove" onclick="removeReviewItem('+idx+')" title="إزالة">✕</button></div>'});document.getElementById('reviewItems').innerHTML=h;document.getElementById('reviewTotal').textContent=items.reduce(function(s,i){return s+i.price*i.qty},0).toFixed(2)+' د.ج'}
 function removeReviewItem(idx){var item=window._reviewItems[idx];if(item){var inp=document.querySelector('.product[data-id="'+item.id+'"] .qty');if(inp)inp.value=0}window._reviewItems.splice(idx,1);updateCart();if(window._reviewItems.length===0){closeReview();return}renderReview()}
 function closeReview(){document.getElementById('reviewModal').classList.remove('show')}
-function submitOrder(){var items=getItems();var notes=document.getElementById('notes').value;document.getElementById('reviewModal').classList.remove('show');fetch('/api/submit-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:shopCode,items:items,notes:notes})}).then(function(r){return r.json()}).then(function(d){if(d.success){document.getElementById('orderNumber').textContent='#'+d.order_id;document.getElementById('successScreen').classList.add('show')}else{alert(d.error||'خطأ')}}).catch(function(){alert('فشل الاتصال')})}
+function submitOrder(){var items=getItems();var notes=document.getElementById('notes').value;document.getElementById('reviewModal').classList.remove('show');fetch('/api/submit-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:shopCode,items:items,notes:notes})}).then(function(r){return r.json()}).then(function(d){if(d.success){document.getElementById('orderNumber').textContent='#'+d.order_number;document.getElementById('successScreen').classList.add('show')}else{alert(d.error||'خطأ')}}).catch(function(){alert('فشل الاتصال')})}
 </script>
 </body>
 </html>
