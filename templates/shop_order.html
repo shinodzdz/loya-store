@@ -39,20 +39,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);background-size:cover;b
 .product{display:flex;align-items:center;justify-content:space-between;background:var(--card-bg);border:1px solid var(--card-border);border-right:3px solid var(--accent);padding:12px 14px;border-radius:14px;margin-bottom:6px;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,0,0,0.25);backdrop-filter:blur(8px)}
 .product:hover{border-color:var(--accent);box-shadow:0 6px 22px rgba(0,0,0,0.35)}
 .product.out-of-stock{opacity:0.45;border-color:rgba(218,54,51,0.15)}
-.container.grid-view{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 6px;padding-bottom:130px}
-.container.grid-view .product{flex-direction:column;padding:0;margin-bottom:0;border:none;border-radius:14px;overflow:hidden;background:var(--card-bg);box-shadow:0 2px 12px rgba(0,0,0,0.15)}
-.container.grid-view .product:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,0.25)}
-.container.grid-view .product .info{width:100%;padding:8px 10px 6px}
-.container.grid-view .product .name{font-size:13px}
-.container.grid-view .product .price{font-size:11px;margin-top:1px}
-.container.grid-view .product .price strong{font-size:14px}
-.container.grid-view .controls{padding:0 10px 8px;justify-content:center;gap:4px}
-.container.grid-view .controls .qty{width:38px;font-size:14px;padding:3px 2px}
-.container.grid-view .controls button{width:30px;height:30px;font-size:14px}
-.container.grid-view .cat-title{grid-column:1/-1}
-.container.grid-view .product img{width:100%!important;height:110px!important;border-radius:0!important;margin:0!important;object-fit:cover}
-.container.grid-view .product .unit-toggle{padding:0 10px 8px;margin-top:0;flex-wrap:wrap}
-.container.grid-view .product .unit-btn{font-size:10px;padding:2px 7px}
+
 .product .info{flex:1}
 .product .name{font-size:15px;font-weight:600;color:var(--text)}
 .product .price{color:var(--text-muted);font-size:13px;margin-top:2px}
@@ -146,7 +133,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);background-size:cover;b
   <button class="cat-btn" onclick='filterCat({{ c|tojson }},this)'>{{ c }}</button>
   {% endfor %}
 </div>
-<div class="container grid-view">
+<div class="container">
   {% set current_cat = '' %}
   {% for p in products %}
     {% if p.category != current_cat %}
