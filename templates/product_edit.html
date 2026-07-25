@@ -83,6 +83,10 @@ input:focus{outline:none;border-color:var(--accent)}
       <input type="number" name="qty_per_carton" value="{{ product.qty_per_carton or 1 }}" min="1">
       <label>رابط صورة المنتج (اختياري)</label>
       <input type="url" name="image_url" value="{{ product.image_url or '' }}" placeholder="https://...">
+      <label>وحدة البالتة (اختياري)</label>
+      <input type="text" name="unit_pallet" value="{{ product.unit_pallet or '' }}" placeholder="بالتة">
+      <label>عدد الوحدات في البالتة</label>
+      <input type="number" name="qty_per_pallet" value="{{ product.qty_per_pallet or 0 }}" min="0">
       {% if product.image_url %}<div style="margin-bottom:10px"><img src="{{ product.image_url }}" alt="" style="width:60px;height:60px;border-radius:8px;object-fit:cover"></div>{% endif %}
       <label>التصنيف</label>
       <input type="text" name="category" value="{{ product.category }}">

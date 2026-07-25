@@ -90,6 +90,10 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);background-size:cover;b
 .last-order .val{font-weight:700}
 .last-order .link{color:var(--accent);text-decoration:none;font-size:12px;padding:5px 10px;background:var(--btn-hover);border-radius:8px;transition:all 0.2s}
 .last-order .link:hover{opacity:0.8}
+.unit-toggle{display:flex;gap:4px;margin-top:4px}
+.unit-btn{padding:3px 10px;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:pointer;font-family:'Cairo',sans-serif;transition:all 0.2s}
+.unit-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.unit-btn:hover:not(.active){border-color:var(--accent);color:var(--accent)}
 .cat-filters{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 10px;padding:0 12px}
 .cat-btn{padding:6px 14px;background:var(--card-bg);border:1px solid var(--border);border-radius:20px;color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'Cairo',sans-serif;transition:all 0.2s}
 .cat-btn:hover{border-color:var(--accent);color:var(--accent)}
@@ -134,23 +138,45 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);background-size:cover;b
       {% set current_cat = p.category %}
       <div class="cat-title"><div class="dot"></div><span>{{ p.category }}</span></div>
     {% endif %}
-    {% if shop.type=='تاجر جملة' and p.unit_wholesale %}
-      {% set d_price = p.price %}
-      {% set d_unit = p.unit_wholesale %}
-      {% set d_stock = (p.stock // p.qty_per_carton) if p.qty_per_carton and p.stock else 0 %}
-      {% set d_mult = p.qty_per_carton %}
+    {% if shop.type=='تاجر جملة' and p.unit_wholesale and p.qty_per_pallet %}
+      {% set carton_price = p.price %}
+      {% set carton_unit = p.unit_wholesale %}
+      {% set carton_stock = (p.stock // p.qty_per_carton) if p.qty_per_carton and p.stock else 0 %}
+      {% set carton_mult = p.qty_per_carton %}
+      {% set pallet_price = p.price * p.qty_per_pallet %}
+      {% set pallet_unit = p.unit_pallet or 'بالتة' %}
+      {% set pallet_stock = (p.stock // p.qty_per_pallet) if p.qty_per_pallet and p.stock else 0 %}
+      {% set pallet_mult = p.qty_per_pallet %}
+      {% set has_pallet = True %}
+    {% elif shop.type=='تاجر جملة' and p.unit_wholesale %}
+      {% set carton_price = p.price %}
+      {% set carton_unit = p.unit_wholesale %}
+      {% set carton_stock = (p.stock // p.qty_per_carton) if p.qty_per_carton and p.stock else 0 %}
+      {% set carton_mult = p.qty_per_carton %}
+      {% set has_pallet = False %}
     {% else %}
-      {% set d_price = p.price_semi if shop.type=='تاجر تجزئة' and p.price_semi > 0 else p.price %}
-      {% set d_unit = p.unit %}
-      {% set d_stock = p.stock %}
-      {% set d_mult = 1 %}
+      {% set carton_price = p.price_semi if shop.type=='تاجر تجزئة' and p.price_semi > 0 else p.price %}
+      {% set carton_unit = p.unit %}
+      {% set carton_stock = p.stock %}
+      {% set carton_mult = 1 %}
+      {% set has_pallet = False %}
     {% endif %}
-    <div class="product {{ 'out-of-stock' if d_stock==0 }}" data-cat="{{ p.category }}" data-id="{{ p.id }}" data-name="{{ p.name }}" data-price="{{ d_price }}" data-unit="{{ d_unit }}" data-stock="{{ d_stock }}" data-mult="{{ d_mult }}">
+    {% set d_price = carton_price %}
+    {% set d_unit = carton_unit %}
+    {% set d_stock = carton_stock %}
+    {% set d_mult = carton_mult %}
+    <div class="product {{ 'out-of-stock' if d_stock==0 }}" data-cat="{{ p.category }}" data-id="{{ p.id }}" data-name="{{ p.name }}" data-carton-price="{{ carton_price }}" data-carton-unit="{{ carton_unit }}" data-carton-stock="{{ carton_stock }}" data-carton-mult="{{ carton_mult }}"{% if has_pallet %} data-pallet-price="{{ pallet_price }}" data-pallet-unit="{{ pallet_unit }}" data-pallet-stock="{{ pallet_stock }}" data-pallet-mult="{{ pallet_mult }}"{% endif %} data-price="{{ d_price }}" data-unit="{{ d_unit }}" data-stock="{{ d_stock }}" data-mult="{{ d_mult }}" data-has-pallet="{{ '1' if has_pallet else '0' }}">
       {% if p.image_url %}<img src="{{ p.image_url }}" alt="" style="width:40px;height:40px;border-radius:10px;object-fit:cover;margin-left:10px;flex-shrink:0">{% endif %}
       <div class="info">
         <div class="name">{{ p.name }} {% if d_stock>0 %}<span style="color:var(--accent-green);font-size:11px;font-weight:600">متوفر</span>{% else %}<span style="color:var(--accent-red);font-size:11px;font-weight:600">غير متوفر</span>{% endif %}</div>
-        <div class="price"><strong>{{ '%.2f'|format(d_price) }} د.ج</strong> / {{ d_unit }}</div>
+        <div class="price" id="price_{{ p.id }}"><strong>{{ '%.2f'|format(d_price) }} د.ج</strong> / {{ d_unit }}</div>
         {% if p.unit_wholesale and shop.type=='تاجر تجزئة' %}<div style="color:var(--text-dim);font-size:11px;margin-top:1px">🟦 الكرتون = {{ p.qty_per_carton }} {{ p.unit }}</div>{% endif %}
+        {% if has_pallet %}
+        <div class="unit-toggle" style="margin-top:4px;display:flex;gap:4px">
+          <button class="unit-btn active" data-mode="carton" onclick="toggleUnit(this)">📦 {{ p.unit_wholesale }}</button>
+          <button class="unit-btn" data-mode="pallet" onclick="toggleUnit(this)">📦 {{ p.unit_pallet or 'بالتة' }}</button>
+        </div>
+        {% endif %}
       </div>
       <div class="controls">
         {% if d_stock > 0 %}
@@ -212,6 +238,7 @@ function renderReview(){var items=window._reviewItems;var h='';items.forEach(fun
 function removeReviewItem(idx){var item=window._reviewItems[idx];if(item){var inp=document.querySelector('.product[data-id="'+item.id+'"] .qty');if(inp)inp.value=0}window._reviewItems.splice(idx,1);updateCart();if(window._reviewItems.length===0){closeReview();return}renderReview()}
 function closeReview(){document.getElementById('reviewModal').classList.remove('show')}
 function submitOrder(){var items=getItems();var notes=document.getElementById('notes').value;document.getElementById('reviewModal').classList.remove('show');fetch('/api/submit-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:shopCode,items:items,notes:notes})}).then(function(r){return r.json()}).then(function(d){if(d.success){document.getElementById('orderNumber').textContent='#'+d.order_number;document.getElementById('successScreen').classList.add('show')}else{alert(d.error||'خطأ')}}).catch(function(){alert('فشل الاتصال')})}
+function toggleUnit(btn){var p=btn.closest('.product');if(p.dataset.hasPallet!=='1')return;var mode=btn.dataset.mode;p.querySelectorAll('.unit-btn').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');var price=p.dataset[mode+'Price'];var unit=p.dataset[mode+'Unit'];var stock=p.dataset[mode+'Stock'];var mult=p.dataset[mode+'Mult'];p.dataset.price=price;p.dataset.unit=unit;p.dataset.stock=stock;p.dataset.mult=mult;var inp=p.querySelector('.qty');if(inp){inp.value=0;inp.max=stock;inp.step=mode==='pallet'?1:0.5}var priceEl=p.querySelector('.price');if(priceEl)priceEl.innerHTML='<strong>'+parseFloat(price).toFixed(2)+' د.ج</strong> / '+unit;var nameDiv=p.querySelector('.name');if(nameDiv){var parts=nameDiv.innerHTML.split('<span');nameDiv.innerHTML=(stock>0?'<span style="color:var(--accent-green);font-size:11px;font-weight:600">متوفر</span>':'<span style="color:var(--accent-red);font-size:11px;font-weight:600">غير متوفر</span>');var nameText=p.dataset.name;nameDiv.innerHTML=nameText+' '+nameDiv.innerHTML;nameDiv.innerHTML=nameDiv.innerHTML.replace(nameText+' ',(stock>0?'<span style="color:var(--accent-green);font-size:11px;font-weight:600">متوفر</span>':'<span style="color:var(--accent-red);font-size:11px;font-weight:600">غير متوفر</span>'));if(parseFloat(stock)<=0){p.classList.add('out-of-stock');var c=p.querySelector('.controls');if(c)c.innerHTML='<span style="color:var(--accent-red);font-size:12px;font-weight:600">نفذ</span>'}else{p.classList.remove('out-of-stock');var c=p.querySelector('.controls');if(c&&!c.querySelector('.qty')){c.innerHTML='<button class="btn-minus" onclick="changeQty(this,-1)">−</button><input class="qty" type="number" value="0" min="0" step="'+(mode==='pallet'?1:0.5)+'"><button class="btn-plus" onclick="changeQty(this,1)">+</button>'}}updateCart()}
 function showInfo(){document.getElementById('infoModal').classList.add('show')}
 function closeInfo(e){if(!e||e.target===e.currentTarget||!e)document.getElementById('infoModal').classList.remove('show')}
 </script>
