@@ -91,6 +91,17 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);background-size:cover;b
 .last-order .link{color:var(--accent);text-decoration:none;font-size:12px;padding:5px 10px;background:var(--btn-hover);border-radius:8px;transition:all 0.2s}
 .last-order .link:hover{opacity:0.8}
 .unit-toggle{display:flex;gap:4px;margin-top:4px}
+.view-toggle{margin-right:auto;display:flex;gap:4px}
+.view-btn{padding:5px 10px;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;color:var(--text-muted);font-size:12px;cursor:pointer;font-family:'Cairo',sans-serif;transition:all 0.2s;line-height:1}
+.view-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.view-btn:hover:not(.active){border-color:var(--accent);color:var(--accent)}
+.container.grid-view{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 8px;padding-bottom:130px}
+.container.grid-view .product{flex-direction:column;align-items:stretch;padding:10px 12px;margin-bottom:0}
+.container.grid-view .product .info{width:100%}
+.container.grid-view .product .name{font-size:13px}
+.container.grid-view .product .price{font-size:11px}
+.container.grid-view .controls{margin-top:6px;justify-content:center}
+.container.grid-view .cat-title{grid-column:1/-1}
 .unit-btn{padding:3px 10px;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:pointer;font-family:'Cairo',sans-serif;transition:all 0.2s}
 .unit-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
 .unit-btn:hover:not(.active){border-color:var(--accent);color:var(--accent)}
@@ -123,13 +134,17 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);background-size:cover;b
   <a href="{{ url_for('shop_orders', code=shop.code) }}" class="link">عرض الكل</a>
 </div>
 {% endif %}
-<div style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 12px 0" id="catFilters">
+<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:12px 12px 0" id="catFilters">
   <button class="cat-btn active" onclick="filterCat('all',this)">الكل</button>
   {% set cats = [] %}
   {% for p in products %}{% if p.category not in cats %}{% set _ = cats.append(p.category) %}{% endif %}{% endfor %}
   {% for c in cats|sort %}
   <button class="cat-btn" onclick='filterCat({{ c|tojson }},this)'>{{ c }}</button>
   {% endfor %}
+  <div class="view-toggle">
+    <button class="view-btn active" data-view="list" onclick="toggleView(this)">📋 قائمة</button>
+    <button class="view-btn" data-view="grid" onclick="toggleView(this)">📐 شبكة</button>
+  </div>
 </div>
 <div class="container">
   {% set current_cat = '' %}
@@ -227,7 +242,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);background-size:cover;b
 <script>
 const shopCode = '{{ shop.code }}';
 function filterCat(cat,btn){document.querySelectorAll('.cat-btn').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');document.querySelectorAll('.product[data-cat]').forEach(function(p){p.style.display=(cat==='all'||p.getAttribute('data-cat')===cat)?'':'none'});var vc=[];document.querySelectorAll('.product[data-cat]').forEach(function(p){if(p.style.display!=='none'&&vc.indexOf(p.getAttribute('data-cat'))===-1)vc.push(p.getAttribute('data-cat'))});document.querySelectorAll('.cat-title').forEach(function(t){var cn=t.querySelector('span').textContent;t.style.display=(cat==='all'||vc.indexOf(cn)!==-1)?'':'none'})}
-(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);document.getElementById('themeBtn').textContent=t==='dark'?'🌙':'☀️'})();
+(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);document.getElementById('themeBtn').textContent=t==='dark'?'🌙':'☀️';var v=localStorage.getItem('view')||'list';var c=document.querySelector('.container');var btns=document.querySelectorAll('.view-btn');if(v==='grid'&&c){c.classList.add('grid-view');btns.forEach(function(b){b.classList.toggle('active',b.dataset.view==='grid')})}})();
 function toggleTheme(){var r=document.documentElement,n=r.getAttribute('data-theme')==='dark'?'light':'dark';r.setAttribute('data-theme',n);localStorage.setItem('theme',n);document.getElementById('themeBtn').textContent=n==='dark'?'🌙':'☀️'}
 function changeQty(btn,d){var inp=btn.parentElement.querySelector('.qty');if(!inp)return;var p=btn.closest('.product');var stock=parseFloat(p.dataset.stock);var v=parseFloat(inp.value)||0;var nv=v+d;if(nv>stock){alert('الكمية المتوفرة في المخزون: '+stock+' '+p.dataset.unit+' فقط. الرجاء تعديل الكمية.');return}inp.value=Math.max(0,nv);updateCart()}
 document.querySelectorAll('.product .qty').forEach(function(i){i.addEventListener('input',function(){var p=i.closest('.product');var stock=parseFloat(p.dataset.stock);var v=parseFloat(i.value)||0;if(v>stock){alert('الكمية المتوفرة في المخزون: '+stock+' '+p.dataset.unit+' فقط. الرجاء تعديل الكمية.');i.value=stock;updateCart();return}updateCart()});i.addEventListener('change',function(){if(parseFloat(this.value)<0)this.value=0})});
@@ -238,6 +253,7 @@ function renderReview(){var items=window._reviewItems;var h='';items.forEach(fun
 function removeReviewItem(idx){var item=window._reviewItems[idx];if(item){var inp=document.querySelector('.product[data-id="'+item.id+'"] .qty');if(inp)inp.value=0}window._reviewItems.splice(idx,1);updateCart();if(window._reviewItems.length===0){closeReview();return}renderReview()}
 function closeReview(){document.getElementById('reviewModal').classList.remove('show')}
 function submitOrder(){var items=getItems();var notes=document.getElementById('notes').value;document.getElementById('reviewModal').classList.remove('show');fetch('/api/submit-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:shopCode,items:items,notes:notes})}).then(function(r){return r.json()}).then(function(d){if(d.success){document.getElementById('orderNumber').textContent='#'+d.order_number;document.getElementById('successScreen').classList.add('show')}else{alert(d.error||'خطأ')}}).catch(function(){alert('فشل الاتصال')})}
+function toggleView(btn){var mode=btn.dataset.view;var c=document.querySelector('.container');if(!c)return;document.querySelectorAll('.view-btn').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');if(mode==='grid'){c.classList.add('grid-view')}else{c.classList.remove('grid-view')}localStorage.setItem('view',mode);updateCart()}
 function toggleUnit(btn){var p=btn.closest('.product');if(p.dataset.hasPallet!=='1')return;var mode=btn.dataset.mode;p.querySelectorAll('.unit-btn').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');var price=p.dataset[mode+'Price'];var unit=p.dataset[mode+'Unit'];var stock=parseFloat(p.dataset[mode+'Stock']);var mult=p.dataset[mode+'Mult'];p.dataset.price=price;p.dataset.unit=unit;p.dataset.stock=stock;p.dataset.mult=mult;var inp=p.querySelector('.qty');if(inp){inp.value=0;inp.step=mode==='pallet'?1:0.5}var priceEl=p.querySelector('.price');if(priceEl)priceEl.innerHTML='<strong>'+parseFloat(price).toFixed(2)+' د.ج</strong> / '+unit;var nameEl=p.querySelector('.name');if(nameEl){var match=nameEl.innerHTML.match(/^(.+?)(\s*<span)/);if(match)nameEl.innerHTML=p.dataset.name+' '+(stock>0?'<span style="color:var(--accent-green);font-size:11px;font-weight:600">متوفر</span>':'<span style="color:var(--accent-red);font-size:11px;font-weight:600">غير متوفر</span>')}if(stock<=0){p.classList.add('out-of-stock');var c=p.querySelector('.controls');if(c)c.innerHTML='<span style="color:var(--accent-red);font-size:12px;font-weight:600">نفذ</span>'}else{p.classList.remove('out-of-stock');var c=p.querySelector('.controls');if(c&&!c.querySelector('.qty')){var step=mode==='pallet'?1:0.5;c.innerHTML='<button class="btn-minus" onclick="changeQty(this,-1)">−</button><input class="qty" type="number" value="0" min="0" step="'+step+'"><button class="btn-plus" onclick="changeQty(this,1)">+</button>'}}updateCart()}
 function showInfo(){document.getElementById('infoModal').classList.add('show')}
 function closeInfo(e){if(!e||e.target===e.currentTarget||!e)document.getElementById('infoModal').classList.remove('show')}
