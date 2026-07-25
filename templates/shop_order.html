@@ -96,17 +96,21 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);background-size:cover;b
 .view-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
 .view-btn:hover:not(.active){border-color:var(--accent);color:var(--accent)}
 .container.grid-view{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 6px;padding-bottom:130px}
-.container.grid-view .product{flex-direction:column;align-items:stretch;padding:10px 8px;margin-bottom:0;border-radius:12px;border-right-width:2px}
-.container.grid-view .product .info{width:100%}
-.container.grid-view .product .name{font-size:13px;display:flex;flex-wrap:wrap;gap:3px}
+.container.grid-view .product{flex-direction:column;padding:0;margin-bottom:0;border-radius:16px;border-right:none;overflow:hidden;background:var(--card-bg);backdrop-filter:blur(8px)}
+.container.grid-view .product:hover{border-color:var(--card-border);transform:translateY(-1px)}
+.container.grid-view .product .info{width:100%;padding:8px 10px 6px}
+.container.grid-view .product .name{font-size:13px}
 .container.grid-view .product .price{font-size:11px;margin-top:1px}
 .container.grid-view .product .price strong{font-size:13px}
-.container.grid-view .controls{margin-top:5px;justify-content:center;gap:3px}
-.container.grid-view .controls .qty{width:36px;font-size:14px;padding:4px 2px}
-.container.grid-view .controls button{width:30px;height:30px;font-size:15px}
+.container.grid-view .controls{padding:0 10px 8px;justify-content:center;gap:3px}
+.container.grid-view .controls .qty{width:34px;font-size:13px;padding:3px 2px}
+.container.grid-view .controls button{width:28px;height:28px;font-size:14px;border-radius:8px}
 .container.grid-view .cat-title{grid-column:1/-1;margin-top:4px;padding:8px 4px}
-.container.grid-view .unit-toggle{flex-wrap:wrap}
+.container.grid-view .unit-toggle{flex-wrap:wrap;padding:0 10px 8px;margin-top:0}
 .container.grid-view .unit-btn{font-size:10px;padding:2px 7px}
+.container.grid-view .product img{width:100% !important;height:100px !important;border-radius:0 !important;margin:0 !important;object-fit:cover}
+.container.grid-view .product.out-of-stock{opacity:0.4}
+.container.grid-view .product .name .stock-badge{font-size:9px;padding:1px 5px;border-radius:4px}
 .unit-btn{padding:3px 10px;background:var(--input-bg);border:1px solid var(--input-border);border-radius:8px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:pointer;font-family:'Cairo',sans-serif;transition:all 0.2s}
 .unit-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
 .unit-btn:hover:not(.active){border-color:var(--accent);color:var(--accent)}
