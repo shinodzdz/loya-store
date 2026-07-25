@@ -27,18 +27,25 @@ with app.app_context():
     shop_cols = [c['name'] for c in inspector.get_columns('shops')]
     if 'price_semi' not in prod_cols:
         db.session.execute(text('ALTER TABLE products ADD COLUMN price_semi FLOAT DEFAULT 0'))
+        db.session.commit()
     if 'type' not in shop_cols:
         db.session.execute(text("ALTER TABLE shops ADD COLUMN type VARCHAR(20) DEFAULT 'تاجر جملة'"))
+        db.session.commit()
     if 'unit_wholesale' not in prod_cols:
         db.session.execute(text("ALTER TABLE products ADD COLUMN unit_wholesale VARCHAR(50)"))
+        db.session.commit()
     if 'qty_per_carton' not in prod_cols:
         db.session.execute(text("ALTER TABLE products ADD COLUMN qty_per_carton INTEGER DEFAULT 1"))
+        db.session.commit()
     if 'image_url' not in prod_cols:
         db.session.execute(text("ALTER TABLE products ADD COLUMN image_url VARCHAR(500)"))
+        db.session.commit()
     if 'unit_pallet' not in prod_cols:
         db.session.execute(text("ALTER TABLE products ADD COLUMN unit_pallet VARCHAR(50)"))
+        db.session.commit()
     if 'qty_per_pallet' not in prod_cols:
         db.session.execute(text("ALTER TABLE products ADD COLUMN qty_per_pallet INTEGER"))
+        db.session.commit()
     order_cols = [c['name'] for c in inspector.get_columns('orders')]
     if 'order_number' not in order_cols:
         db.session.execute(text("ALTER TABLE orders ADD COLUMN order_number INTEGER"))
