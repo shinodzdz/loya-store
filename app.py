@@ -13,7 +13,7 @@ db_url = db_url.replace('postgres://', 'postgresql://')
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app.config['SHOP_NAME'] = 'Dépot Bouras Béchar'
+app.config['SHOP_NAME'] = 'Dépot Loya Béchar'
 app.config['SHOP_TAGLINE'] = 'طلب المنتجات الغذائية بالجملة'
 app.config['PUBLIC_URL'] = os.environ.get('PUBLIC_URL', '')
 
