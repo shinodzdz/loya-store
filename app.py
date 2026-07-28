@@ -699,10 +699,9 @@ def backup_import():
         for i in data.get('order_items',[]):
             db.session.add(OrderItem(id=i['id'],order_id=i['order_id'],product_name=i['product_name'],quantity=i.get('quantity',0),price=i.get('price',0),unit=i.get('unit','')))
         for tbl in ['products','shops','orders','order_items']:
-            try:
-                db.session.execute(text(f"SELECT setval('{tbl}_id_seq', COALESCE((SELECT MAX(id) FROM {tbl}), 1))"))
-            except:
-                pass
+            seq = db.session.execute(text(f"SELECT pg_get_serial_sequence('{tbl}', 'id')")).scalar()
+            if seq:
+                db.session.execute(text(f"ALTER SEQUENCE {seq} RESTART WITH {db.session.execute(text(f'SELECT MAX(id)+1 FROM {tbl}')).scalar()}"))
         db.session.commit()
         flash('✅ تم استعادة النسخة الاحتياطية بنجاح', 'success')
     except Exception as e:
