@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
 import os, random, string, hashlib
@@ -270,12 +270,14 @@ def edit_product(id):
 def stock_import():
     file = request.files.get('file')
     if not file or not file.filename.endswith('.xlsx'):
+        flash('يرجى رفع ملف Excel بصيغة .xlsx', 'error')
         return redirect(url_for('manage_stock'))
     from openpyxl import load_workbook
     wb = load_workbook(file)
     ws = wb.active
     rows = list(ws.iter_rows(values_only=True))
     if len(rows) < 2:
+        flash('الملف لا يحتوي على بيانات كافية', 'error')
         return redirect(url_for('manage_stock'))
     headers = [str(h).strip().lower() if h else '' for h in rows[0]]
     col_map = {}
@@ -285,17 +287,27 @@ def stock_import():
             col_map['name'] = h
         elif hl in ('المخزون', 'مخزون', 'stock'):
             col_map['stock'] = h
+    if 'name' not in col_map:
+        flash('لم يتم العثور على عمود "الاسم" أو "name" في الملف', 'error')
+        return redirect(url_for('manage_stock'))
+    if 'stock' not in col_map:
+        flash('لم يتم العثور على عمود "المخزون" أو "stock" في الملف', 'error')
+        return redirect(url_for('manage_stock'))
     updated = 0
     for row in rows[1:]:
         vals = [str(v).strip() if v else '' for v in row]
-        name = vals[headers.index(col_map['name'])] if 'name' in col_map else ''
-        stock = int(float(vals[headers.index(col_map['stock'])])) if 'stock' in col_map and vals[headers.index(col_map['stock'])] else 0
+        name = vals[headers.index(col_map['name'])]
+        stock = int(float(vals[headers.index(col_map['stock'])])) if vals[headers.index(col_map['stock'])] else 0
         if name:
             prod = Product.query.filter_by(name=name).first()
             if prod:
                 prod.stock = max(0, stock)
                 updated += 1
     db.session.commit()
+    if updated:
+        flash(f'✅ تم تحديث مخزون {updated} منتج بنجاح', 'success')
+    else:
+        flash('لم يتم العثور على منتجات مطابقة. تأكد من تطابق أسماء المنتجات في ملف Excel', 'error')
     return redirect(url_for('manage_stock'))
 
 @app.route('/admin/stock', methods=['GET', 'POST'])
