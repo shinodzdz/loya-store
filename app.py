@@ -491,18 +491,32 @@ def import_excel():
                 if added == 0:
                     return render_template('import.html', error=f'لم يتم استيراد أي منتج. الأعمدة التي تم التعرف عليها: {found}. تأكد أن البيانات تبدأ من الصف الثاني.')
             elif import_type == 'shops':
+                col_map = {}
+                for h in headers:
+                    hl = h.strip()
+                    if hl in ('الاسم', 'اسم', 'name'):
+                        col_map['name'] = h
+                    elif hl in ('الهاتف', 'phone'):
+                        col_map['phone'] = h
+                    elif hl in ('العنوان', 'address'):
+                        col_map['address'] = h
+                    elif hl in ('النوع', 'type'):
+                        col_map['type'] = h
+                if 'name' not in col_map:
+                    return render_template('import.html', error='لم يتم العثور على عمود "الاسم" أو "name" في الملف')
                 for row in rows[1:]:
                     vals = [str(v).strip() if v else '' for v in row]
-                    name = vals[headers.index('name')] if 'name' in headers else (vals[headers.index('الاسم')] if 'الاسم' in headers else (vals[0] if len(vals) > 0 else ''))
-                    phone = vals[headers.index('phone')] if 'phone' in headers else (vals[headers.index('الهاتف')] if 'الهاتف' in headers else (vals[1] if len(vals) > 1 else ''))
-                    address = vals[headers.index('address')] if 'address' in headers else (vals[headers.index('العنوان')] if 'العنوان' in headers else (vals[2] if len(vals) > 2 else ''))
-                    shop_type = vals[headers.index('type')] if 'type' in headers else (vals[headers.index('النوع')] if 'النوع' in headers else 'تاجر جملة')
-                    if name:
+                    name = vals[headers.index(col_map['name'])]
+                    if not name:
+                        continue
+                    phone = vals[headers.index(col_map['phone'])] if 'phone' in col_map and vals[headers.index(col_map['phone'])] else ''
+                    address = vals[headers.index(col_map['address'])] if 'address' in col_map and vals[headers.index(col_map['address'])] else ''
+                    shop_type = vals[headers.index(col_map['type'])] if 'type' in col_map and vals[headers.index(col_map['type'])] else 'تاجر جملة'
+                    code = generate_code()
+                    while Shop.query.filter_by(code=code).first():
                         code = generate_code()
-                        while Shop.query.filter_by(code=code).first():
-                            code = generate_code()
-                        db.session.add(Shop(name=name, code=code, phone=phone, address=address, type=shop_type))
-                        added += 1
+                    db.session.add(Shop(name=name, code=code, phone=phone, address=address, type=shop_type))
+                    added += 1
             db.session.commit()
             result = f'✅ تم استيراد {added} {import_type} بنجاح'
         except Exception as e:
