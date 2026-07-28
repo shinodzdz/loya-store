@@ -656,6 +656,58 @@ def delete_order(id):
         db.session.commit()
     return redirect(url_for('view_orders'))
 
+@app.route('/admin/backup/export')
+@admin_required
+def backup_export():
+    import json
+    data = {
+        'products': [{'id':p.id,'name':p.name,'price':p.price,'price_semi':p.price_semi,'unit':p.unit,'category':p.category,'available':p.available,'stock':p.stock,'unit_wholesale':p.unit_wholesale,'qty_per_carton':p.qty_per_carton,'image_url':p.image_url,'unit_pallet':p.unit_pallet,'qty_per_pallet':p.qty_per_pallet} for p in Product.query.all()],
+        'shops': [{'id':s.id,'name':s.name,'code':s.code,'phone':s.phone,'address':s.address,'type':s.type} for s in Shop.query.all()],
+        'orders': [{'id':o.id,'shop_id':o.shop_id,'shop_name':o.shop_name,'notes':o.notes,'order_number':o.order_number,'total':o.total,'status':o.status,'created_at':str(o.created_at)} for o in Order.query.all()],
+        'order_items': [{'id':i.id,'order_id':i.order_id,'product_name':i.product_name,'quantity':i.quantity,'price':i.price,'unit':i.unit} for i in OrderItem.query.all()],
+    }
+    filename = f'backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+    return app.response_class(json.dumps(data, ensure_ascii=False, indent=2), mimetype='application/json', headers={'Content-Disposition': f'attachment; filename={filename}'})
+
+@app.route('/admin/backup/import', methods=['POST'])
+@admin_required
+def backup_import():
+    file = request.files.get('file')
+    if not file or not file.filename.endswith('.json'):
+        flash('يرجى رفع ملف JSON', 'error')
+        return redirect(url_for('admin'))
+    try:
+        import json
+        data = json.load(file)
+    except Exception as e:
+        flash(f'خطأ في قراءة الملف: {str(e)}', 'error')
+        return redirect(url_for('admin'))
+    if 'products' not in data:
+        flash('ملف غير صالح', 'error')
+        return redirect(url_for('admin'))
+    try:
+        from sqlalchemy import text
+        OrderItem.query.delete(); Order.query.delete(); Shop.query.delete(); Product.query.delete()
+        for p in data.get('products',[]):
+            db.session.add(Product(id=p['id'],name=p['name'],price=p['price'],price_semi=p.get('price_semi',0),unit=p.get('unit','قطعة'),category=p.get('category','عام'),available=p.get('available',1),stock=p.get('stock',0),unit_wholesale=p.get('unit_wholesale'),qty_per_carton=p.get('qty_per_carton',1),image_url=p.get('image_url'),unit_pallet=p.get('unit_pallet'),qty_per_pallet=p.get('qty_per_pallet')))
+        for s in data.get('shops',[]):
+            db.session.add(Shop(id=s['id'],name=s['name'],code=s['code'],phone=s.get('phone',''),address=s.get('address',''),type=s.get('type','تاجر جملة')))
+        for o in data.get('orders',[]):
+            db.session.add(Order(id=o['id'],shop_id=o['shop_id'],shop_name=o.get('shop_name'),notes=o.get('notes'),order_number=o.get('order_number'),total=o.get('total',0),status=o.get('status','جديد'),created_at=datetime.fromisoformat(o['created_at']) if o.get('created_at') else datetime.now()))
+        for i in data.get('order_items',[]):
+            db.session.add(OrderItem(id=i['id'],order_id=i['order_id'],product_name=i['product_name'],quantity=i.get('quantity',0),price=i.get('price',0),unit=i.get('unit','')))
+        for tbl in ['products','shops','orders','order_items']:
+            try:
+                db.session.execute(text(f"SELECT setval('{tbl}_id_seq', COALESCE((SELECT MAX(id) FROM {tbl}), 0))"))
+            except:
+                pass
+        db.session.commit()
+        flash('✅ تم استعادة النسخة الاحتياطية بنجاح', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'خطأ: {str(e)}', 'error')
+    return redirect(url_for('admin'))
+
 @app.route('/admin/change-password', methods=['GET', 'POST'])
 @admin_required
 def change_password():
