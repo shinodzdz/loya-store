@@ -687,7 +687,8 @@ def backup_import():
         return redirect(url_for('admin'))
     try:
         from sqlalchemy import text
-        OrderItem.query.delete(); Order.query.delete(); Shop.query.delete(); Product.query.delete()
+        db.session.rollback()
+        db.session.execute(text('TRUNCATE TABLE order_items, orders, shops, products RESTART IDENTITY CASCADE'))
         for p in data.get('products',[]):
             db.session.add(Product(id=p['id'],name=p['name'],price=p['price'],price_semi=p.get('price_semi',0),unit=p.get('unit','قطعة'),category=p.get('category','عام'),available=p.get('available',1),stock=p.get('stock',0),unit_wholesale=p.get('unit_wholesale'),qty_per_carton=p.get('qty_per_carton',1),image_url=p.get('image_url'),unit_pallet=p.get('unit_pallet'),qty_per_pallet=p.get('qty_per_pallet')))
         for s in data.get('shops',[]):
