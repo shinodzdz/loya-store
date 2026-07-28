@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>الطلب #{{ order.id }} - {{ shop_name }}</title>
+<title>الطلب #{{ order.order_number or order.id }} - {{ shop_name }}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
 :root,[data-theme="dark"]{
---bg:linear-gradient(rgba(11,14,20,0.82),rgba(26,31,46,0.88)),url('https://images.unsplash.com/photo-1768176136613-96a7bfc0049e?fm=jpg&q=60&w=1920');
+--bg:linear-gradient(rgba(11,14,20,0.82),rgba(26,31,46,0.88)),url('https://i.ibb.co/CKmyQ9s0/Gemini-Generated-Image-6fnhxl6fnhxl6fnh.png');
 --card-bg:rgba(22,27,34,0.8);--card-border:rgba(255,255,255,0.04);--topbar-bg:rgba(11,14,20,0.55);
 --text:#fff;--text-muted:#8B949E;--text-dim:#484F58;--accent:#58A6FF;--accent-green:#2EA043;--accent-red:#DA3633;
 --btn-bg:rgba(48,54,61,0.5);--btn-hover:rgba(88,166,255,0.15);--input-bg:rgba(13,17,23,0.8);--input-border:rgba(48,54,61,0.5);
 --border:rgba(255,255,255,0.08);--border-light:rgba(48,54,61,0.4);
 }
 [data-theme="light"]{
---bg:linear-gradient(rgba(255,255,255,0.88),rgba(240,244,248,0.92)),url('https://images.unsplash.com/photo-1768176136613-96a7bfc0049e?fm=jpg&q=60&w=1920');
+--bg:linear-gradient(rgba(255,255,255,0.88),rgba(240,244,248,0.92)),url('https://i.ibb.co/CKmyQ9s0/Gemini-Generated-Image-6fnhxl6fnhxl6fnh.png');
 --card-bg:rgba(255,255,255,0.92);--card-border:rgba(0,0,0,0.06);--topbar-bg:rgba(255,255,255,0.7);
 --text:#1a1f2e;--text-muted:#57606a;--text-dim:#8B949E;--accent:#1F6FEB;--accent-green:#1a7f37;--accent-red:#cf222e;
 --btn-bg:rgba(0,0,0,0.06);--btn-hover:rgba(31,111,235,0.1);--input-bg:rgba(255,255,255,0.9);--input-border:rgba(0,0,0,0.15);
@@ -57,6 +57,15 @@ select{padding:10px 14px;background:var(--input-bg);border:1px solid var(--input
 select:focus{outline:none;border-color:var(--accent)}
 .btn-update{padding:10px 22px;background:linear-gradient(135deg,#1F6FEB,#8957E5);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s}
 .btn-update:hover{transform:translateY(-1px)}
+@media(max-width:768px){
+.topbar{flex-wrap:wrap;gap:4px;padding:10px 12px}
+.topbar>div:first-child{display:flex;flex-wrap:wrap;gap:3px}
+.topbar a{font-size:11px;margin-right:6px}
+.topbar h1{font-size:13px}
+.container{padding:8px}
+table{font-size:12px}
+td,th{padding:6px 4px}
+}
 </style>
 </head>
 <body>
@@ -72,7 +81,7 @@ select:focus{outline:none;border-color:var(--accent)}
   </div>
   <div style="display:flex;align-items:center">
     <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" title="تغيير الثيم">🌙</button>
-    <h1><span>{{ shop_name }}</span> — الطلب #{{ order.id }}</h1>
+    <h1><span>{{ shop_name }}</span> — الطلب #{{ order.order_number or order.id }}</h1>
   </div>
 </div>
 <div class="container">
@@ -130,7 +139,7 @@ select:focus{outline:none;border-color:var(--accent)}
   </div>
   <div class="card" style="border-color:rgba(218,54,51,0.2)">
     <h2 style="color:var(--accent-red)">🗑️ حذف الطلب</h2>
-    <form method="POST" action="{{ url_for('delete_order', id=order.id) }}" onsubmit="return confirm('حذف الطلب #{{ order.id }} نهائياً؟ لا يمكن التراجع!')">
+    <form method="POST" action="{{ url_for('delete_order', id=order.id) }}" onsubmit="return confirm('حذف الطلب #{{ order.order_number or order.id }} نهائياً؟ لا يمكن التراجع!')">
       <button type="submit" style="padding:12px 28px;background:rgba(218,54,51,0.2);border:1px solid rgba(218,54,51,0.3);border-radius:12px;color:var(--accent-red);font-size:15px;font-weight:700;cursor:pointer;font-family:'Cairo',sans-serif;width:100%;transition:all 0.2s">🗑️ حذف الطلب نهائياً</button>
     </form>
   </div>

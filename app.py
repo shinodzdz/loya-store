@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
 import os, random, string, hashlib
@@ -13,7 +13,7 @@ db_url = db_url.replace('postgres://', 'postgresql://')
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app.config['SHOP_NAME'] = 'Dépot Bouras Béchar'
+app.config['SHOP_NAME'] = 'Dépot Loya Béchar'
 app.config['SHOP_TAGLINE'] = 'طلب المنتجات الغذائية بالجملة'
 app.config['PUBLIC_URL'] = os.environ.get('PUBLIC_URL', '')
 
@@ -30,10 +30,16 @@ class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     price = db.Column(db.Float, nullable=False)
+    price_semi = db.Column(db.Float, default=0)
     unit = db.Column(db.String(50), default='قطعة')
     category = db.Column(db.String(100), default='عام')
     available = db.Column(db.Integer, default=1)
     stock = db.Column(db.Float, default=0)
+    unit_wholesale = db.Column(db.String(50), nullable=True)
+    qty_per_carton = db.Column(db.Integer, default=1)
+    image_url = db.Column(db.String(500), nullable=True)
+    unit_pallet = db.Column(db.String(50), nullable=True)
+    qty_per_pallet = db.Column(db.Integer, nullable=True)
 
 class Shop(db.Model):
     __tablename__ = 'shops'
@@ -42,6 +48,7 @@ class Shop(db.Model):
     code = db.Column(db.String(20), unique=True, nullable=False)
     phone = db.Column(db.String(50))
     address = db.Column(db.String(300))
+    type = db.Column(db.String(20), default='تاجر جملة')
     created_at = db.Column(db.DateTime, default=datetime.now)
 
 class Order(db.Model):
@@ -50,6 +57,7 @@ class Order(db.Model):
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.id'), nullable=False)
     shop_name = db.Column(db.String(200))
     notes = db.Column(db.Text)
+    order_number = db.Column(db.Integer)
     total = db.Column(db.Float, default=0)
     status = db.Column(db.String(50), default='جديد')
     created_at = db.Column(db.DateTime, default=datetime.now)
@@ -64,20 +72,79 @@ class OrderItem(db.Model):
     price = db.Column(db.Float, nullable=False)
     unit = db.Column(db.String(50))
 
-def init_db():
+with app.app_context():
     db.create_all()
     if not Admin.query.first():
         db.session.add(Admin(username='admin', password=hashlib.sha256('admin123'.encode()).hexdigest()))
         db.session.commit()
-    try:
-        from sqlalchemy import text
-        db.session.execute(text('ALTER TABLE products ADD COLUMN stock FLOAT DEFAULT 0'))
-        db.session.commit()
-    except:
-        db.session.rollback()
-
-with app.app_context():
-    init_db()
+    from sqlalchemy import inspect, text
+    for tbl in ('products','shops','orders'):
+        try:
+            inspector = inspect(db.engine)
+            cols = [c['name'] for c in inspector.get_columns(tbl)]
+        except:
+            continue
+        if tbl == 'products':
+            if 'stock' not in cols:
+                try:
+                    db.session.execute(text('ALTER TABLE products ADD COLUMN stock FLOAT DEFAULT 0'))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+            if 'price_semi' not in cols:
+                try:
+                    db.session.execute(text('ALTER TABLE products ADD COLUMN price_semi FLOAT DEFAULT 0'))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+            if 'unit_wholesale' not in cols:
+                try:
+                    db.session.execute(text("ALTER TABLE products ADD COLUMN unit_wholesale VARCHAR(50)"))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+            if 'qty_per_carton' not in cols:
+                try:
+                    db.session.execute(text("ALTER TABLE products ADD COLUMN qty_per_carton INTEGER DEFAULT 1"))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+            if 'image_url' not in cols:
+                try:
+                    db.session.execute(text("ALTER TABLE products ADD COLUMN image_url VARCHAR(500)"))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+            if 'unit_pallet' not in cols:
+                try:
+                    db.session.execute(text("ALTER TABLE products ADD COLUMN unit_pallet VARCHAR(50)"))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+            if 'qty_per_pallet' not in cols:
+                try:
+                    db.session.execute(text("ALTER TABLE products ADD COLUMN qty_per_pallet INTEGER"))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+        if tbl == 'shops':
+            if 'type' not in cols:
+                try:
+                    db.session.execute(text("ALTER TABLE shops ADD COLUMN type VARCHAR(20) DEFAULT 'تاجر جملة'"))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+        if tbl == 'orders':
+            if 'order_number' not in cols:
+                try:
+                    db.session.execute(text("ALTER TABLE orders ADD COLUMN order_number INTEGER"))
+                    db.session.commit()
+                    all_ids = db.session.execute(text("SELECT id FROM orders ORDER BY created_at, id")).fetchall()
+                    for i, (oid,) in enumerate(all_ids, 1):
+                        db.session.execute(text("UPDATE orders SET order_number = :num WHERE id = :oid"), {'num': i, 'oid': oid})
+                    db.session.commit()
+                except:
+                    db.session.rollback()
 
 def get_public_url():
     if app.config['PUBLIC_URL']:
@@ -145,10 +212,16 @@ def manage_products():
     if request.method == 'POST':
         name = request.form['name']
         price = float(request.form['price'])
+        price_semi = float(request.form.get('price_semi', 0) or 0)
         unit = request.form.get('unit', 'قطعة')
         category = request.form.get('category', 'عام')
         stock = float(request.form.get('stock', 0))
-        db.session.add(Product(name=name, price=price, unit=unit, category=category, stock=stock))
+        unit_wholesale = request.form.get('unit_wholesale') or None
+        qty_per_carton = int(request.form.get('qty_per_carton', 1) or 1)
+        image_url = request.form.get('image_url') or None
+        unit_pallet = request.form.get('unit_pallet') or None
+        qty_per_pallet = int(request.form.get('qty_per_pallet', 0)) or None
+        db.session.add(Product(name=name, price=price, price_semi=price_semi, unit=unit, category=category, stock=stock, unit_wholesale=unit_wholesale, qty_per_carton=qty_per_carton, image_url=image_url, unit_pallet=unit_pallet, qty_per_pallet=qty_per_pallet))
         db.session.commit()
     products = Product.query.order_by(Product.category, Product.name).all()
     return render_template('products.html', products=products)
@@ -160,6 +233,17 @@ def delete_product(id):
     if product:
         db.session.delete(product)
         db.session.commit()
+    return redirect(url_for('manage_products'))
+
+@app.route('/admin/products/bulk_delete', methods=['POST'])
+@admin_required
+def bulk_delete_products():
+    ids = request.form.getlist('ids')
+    for pid in ids:
+        product = db.session.get(Product, int(pid))
+        if product:
+            db.session.delete(product)
+    db.session.commit()
     return redirect(url_for('manage_products'))
 
 @app.route('/admin/products/toggle/<int:id>')
@@ -180,14 +264,65 @@ def edit_product(id):
     if request.method == 'POST':
         product.name = request.form['name']
         product.price = float(request.form['price'])
+        product.price_semi = float(request.form.get('price_semi', 0) or 0)
         product.unit = request.form.get('unit', 'قطعة')
         product.category = request.form.get('category', 'عام')
         product.stock = float(request.form.get('stock', 0))
+        product.unit_wholesale = request.form.get('unit_wholesale') or None
+        product.qty_per_carton = int(request.form.get('qty_per_carton', 1) or 1)
+        product.image_url = request.form.get('image_url') or None
+        product.unit_pallet = request.form.get('unit_pallet') or None
+        product.qty_per_pallet = int(request.form.get('qty_per_pallet', 0)) or None
         db.session.commit()
         return redirect(url_for('manage_products'))
     return render_template('product_edit.html', product=product)
 
 # ─── Stock Management ───
+
+@app.route('/admin/stock/import', methods=['POST'])
+@admin_required
+def stock_import():
+    file = request.files.get('file')
+    if not file or not file.filename.endswith('.xlsx'):
+        flash('يرجى رفع ملف Excel بصيغة .xlsx', 'error')
+        return redirect(url_for('manage_stock'))
+    from openpyxl import load_workbook
+    wb = load_workbook(file)
+    ws = wb.active
+    rows = list(ws.iter_rows(values_only=True))
+    if len(rows) < 2:
+        flash('الملف لا يحتوي على بيانات كافية', 'error')
+        return redirect(url_for('manage_stock'))
+    headers = [str(h).strip().lower() if h else '' for h in rows[0]]
+    col_map = {}
+    for h in headers:
+        hl = h.strip()
+        if hl in ('الاسم', 'اسم', 'name'):
+            col_map['name'] = h
+        elif hl in ('المخزون', 'مخزون', 'stock'):
+            col_map['stock'] = h
+    if 'name' not in col_map:
+        flash('لم يتم العثور على عمود "الاسم" أو "name" في الملف', 'error')
+        return redirect(url_for('manage_stock'))
+    if 'stock' not in col_map:
+        flash('لم يتم العثور على عمود "المخزون" أو "stock" في الملف', 'error')
+        return redirect(url_for('manage_stock'))
+    updated = 0
+    for row in rows[1:]:
+        vals = [str(v).strip() if v else '' for v in row]
+        name = vals[headers.index(col_map['name'])]
+        stock = int(float(vals[headers.index(col_map['stock'])])) if vals[headers.index(col_map['stock'])] else 0
+        if name:
+            prod = Product.query.filter_by(name=name).first()
+            if prod:
+                prod.stock = max(0, stock)
+                updated += 1
+    db.session.commit()
+    if updated:
+        flash(f'✅ تم تحديث مخزون {updated} منتج بنجاح', 'success')
+    else:
+        flash('لم يتم العثور على منتجات مطابقة. تأكد من تطابق أسماء المنتجات في ملف Excel', 'error')
+    return redirect(url_for('manage_stock'))
 
 @app.route('/admin/stock', methods=['GET', 'POST'])
 @admin_required
@@ -239,10 +374,11 @@ def manage_shops():
         name = request.form['name']
         phone = request.form.get('phone', '')
         address = request.form.get('address', '')
+        shop_type = request.form.get('type', 'تاجر جملة')
         code = generate_code()
         while Shop.query.filter_by(code=code).first():
             code = generate_code()
-        db.session.add(Shop(name=name, code=code, phone=phone, address=address))
+        db.session.add(Shop(name=name, code=code, phone=phone, address=address, type=shop_type))
         db.session.commit()
     shops = Shop.query.order_by(Shop.created_at.desc()).all()
     return render_template('shops.html', shops=shops)
@@ -257,6 +393,18 @@ def delete_shop(id):
         db.session.commit()
     return redirect(url_for('manage_shops'))
 
+@app.route('/admin/shops/bulk_delete', methods=['POST'])
+@admin_required
+def bulk_delete_shops():
+    ids = request.form.getlist('ids')
+    for sid in ids:
+        shop = db.session.get(Shop, int(sid))
+        if shop:
+            Order.query.filter_by(shop_id=int(sid)).delete()
+            db.session.delete(shop)
+    db.session.commit()
+    return redirect(url_for('manage_shops'))
+
 @app.route('/admin/shops/edit/<int:id>', methods=['GET', 'POST'])
 @admin_required
 def edit_shop(id):
@@ -267,6 +415,7 @@ def edit_shop(id):
         shop.name = request.form['name']
         shop.phone = request.form.get('phone', '')
         shop.address = request.form.get('address', '')
+        shop.type = request.form.get('type', 'تاجر جملة')
         db.session.commit()
         return redirect(url_for('manage_shops'))
     return render_template('shop_edit.html', shop=shop)
@@ -292,28 +441,84 @@ def import_excel():
             headers = [str(h).strip().lower() if h else '' for h in rows[0]]
             added = 0
             if import_type == 'products':
+                col_map = {}
+                for h in headers:
+                    hl = h.strip()
+                    if hl in ('الاسم', 'اسم', 'name'):
+                        col_map['name'] = h
+                    elif hl in ('سعر الجملة', 'سعرالجملة', 'price'):
+                        col_map['price'] = h
+                    elif hl in ('سعر التجزئة', 'سعر نصف الجملة', 'سعر النصف جملة', 'سعرنصفالجملة', 'سعرالنصفجملة', 'نصف جملة', 'price_semi', 'semi price'):
+                        col_map['price_semi'] = h
+                    elif hl in ('الوحدة', 'وحدة', 'unit'):
+                        col_map['unit'] = h
+                    elif hl in ('وحدة الجملة', 'unit_wholesale'):
+                        col_map['unit_wholesale'] = h
+                    elif hl in ('عدد العلب', 'عدد', 'qty_per_carton'):
+                        col_map['qty_per_carton'] = h
+                    elif hl in ('رابط الصورة', 'صورة', 'image_url', 'image'):
+                        col_map['image_url'] = h
+                    elif hl in ('وحدة البالتة', 'بالتة', 'unit_pallet', 'pallet'):
+                        col_map['unit_pallet'] = h
+                    elif hl in ('عدد البالتات', 'qty_per_pallet'):
+                        col_map['qty_per_pallet'] = h
+                    elif hl in ('التصنيف', 'تصنيف', 'category'):
+                        col_map['category'] = h
+                    elif hl in ('المخزون', 'مخزون', 'stock'):
+                        col_map['stock'] = h
+                if not col_map:
+                    return render_template('import.html', error='لم يتم التعرف على أي عمود. تأكد أن الصف الأول يحتوي على عناوين الأعمدة مثل: الاسم، سعر الجملة، سعر التجزئة، المخزون...')
+                if 'name' not in col_map:
+                    return render_template('import.html', error='لم يتم العثور على عمود "الاسم" أو "name". تأكد من تسمية العمود.')
+                found = ', '.join(f'"{k}"' for k in col_map)
                 for row in rows[1:]:
                     vals = [str(v).strip() if v else '' for v in row]
-                    name = vals[headers.index('name')] if 'name' in headers else (vals[0] if len(vals) > 0 else '')
-                    price = float(vals[headers.index('price')]) if 'price' in headers else (float(vals[1]) if len(vals) > 1 else 0)
-                    unit = vals[headers.index('unit')] if 'unit' in headers else (vals[2] if len(vals) > 2 else 'قطعة')
-                    category = vals[headers.index('category')] if 'category' in headers else (vals[3] if len(vals) > 3 else 'عام')
-                    stock = int(float(vals[headers.index('stock')])) if 'stock' in headers else 0
-                    if name:
-                        db.session.add(Product(name=name, price=price, unit=unit, category=category, stock=stock))
-                        added += 1
+                    name = vals[headers.index(col_map['name'])]
+                    if not name:
+                        continue
+                    price = float(vals[headers.index(col_map['price'])]) if 'price' in col_map and vals[headers.index(col_map['price'])] else 0
+                    price_semi = float(vals[headers.index(col_map['price_semi'])]) if 'price_semi' in col_map and vals[headers.index(col_map['price_semi'])] else 0
+                    unit = vals[headers.index(col_map['unit'])] if 'unit' in col_map else 'قطعة'
+                    category = vals[headers.index(col_map['category'])] if 'category' in col_map else 'عام'
+                    stock = int(float(vals[headers.index(col_map['stock'])])) if 'stock' in col_map and vals[headers.index(col_map['stock'])] else 0
+                    unit_wholesale = vals[headers.index(col_map['unit_wholesale'])] if 'unit_wholesale' in col_map and vals[headers.index(col_map['unit_wholesale'])] else None
+                    qty_per_carton = int(float(vals[headers.index(col_map['qty_per_carton'])])) if 'qty_per_carton' in col_map and vals[headers.index(col_map['qty_per_carton'])] else 1
+                    image_url = vals[headers.index(col_map['image_url'])] if 'image_url' in col_map and vals[headers.index(col_map['image_url'])] else None
+                    unit_pallet = vals[headers.index(col_map['unit_pallet'])] if 'unit_pallet' in col_map and vals[headers.index(col_map['unit_pallet'])] else None
+                    qty_per_pallet = int(float(vals[headers.index(col_map['qty_per_pallet'])])) if 'qty_per_pallet' in col_map and vals[headers.index(col_map['qty_per_pallet'])] else None
+                    db.session.add(Product(name=name, price=price, price_semi=price_semi, unit=unit, category=category, stock=stock, unit_wholesale=unit_wholesale, qty_per_carton=qty_per_carton, image_url=image_url, unit_pallet=unit_pallet, qty_per_pallet=qty_per_pallet))
+                    added += 1
+                if added == 0:
+                    return render_template('import.html', error=f'لم يتم استيراد أي منتج. الأعمدة التي تم التعرف عليها: {found}. تأكد أن البيانات تبدأ من الصف الثاني.')
             elif import_type == 'shops':
+                col_map = {}
+                for h in headers:
+                    hl = h.strip()
+                    if hl in ('الاسم', 'اسم', 'name'):
+                        col_map['name'] = h
+                    elif hl in ('الهاتف', 'phone'):
+                        col_map['phone'] = h
+                    elif hl in ('العنوان', 'address'):
+                        col_map['address'] = h
+                    elif hl in ('النوع', 'type'):
+                        col_map['type'] = h
+                if 'name' not in col_map:
+                    return render_template('import.html', error='لم يتم العثور على عمود "الاسم" أو "name" في الملف')
+                existing_codes = set(row[0] for row in db.session.query(Shop.code).all())
                 for row in rows[1:]:
                     vals = [str(v).strip() if v else '' for v in row]
-                    name = vals[headers.index('name')] if 'name' in headers else (vals[0] if len(vals) > 0 else '')
-                    phone = vals[headers.index('phone')] if 'phone' in headers else (vals[1] if len(vals) > 1 else '')
-                    address = vals[headers.index('address')] if 'address' in headers else (vals[2] if len(vals) > 2 else '')
-                    if name:
+                    name = vals[headers.index(col_map['name'])]
+                    if not name:
+                        continue
+                    phone = vals[headers.index(col_map['phone'])] if 'phone' in col_map and vals[headers.index(col_map['phone'])] else ''
+                    address = vals[headers.index(col_map['address'])] if 'address' in col_map and vals[headers.index(col_map['address'])] else ''
+                    shop_type = vals[headers.index(col_map['type'])] if 'type' in col_map and vals[headers.index(col_map['type'])] else 'تاجر جملة'
+                    code = generate_code()
+                    while code in existing_codes:
                         code = generate_code()
-                        while Shop.query.filter_by(code=code).first():
-                            code = generate_code()
-                        db.session.add(Shop(name=name, code=code, phone=phone, address=address))
-                        added += 1
+                    existing_codes.add(code)
+                    db.session.add(Shop(name=name, code=code, phone=phone, address=address, type=shop_type))
+                    added += 1
             db.session.commit()
             result = f'✅ تم استيراد {added} {import_type} بنجاح'
         except Exception as e:
@@ -379,7 +584,8 @@ def submit_order():
         return jsonify({'success': False, 'error': 'كود غير صحيح'})
 
     total = sum(float(item['price']) * float(item['qty']) for item in items)
-    order = Order(shop_id=shop.id, shop_name=shop.name, notes=notes, total=total)
+    last_num = db.session.query(db.func.max(Order.order_number)).scalar() or 0
+    order = Order(shop_id=shop.id, shop_name=shop.name, notes=notes, total=total, order_number=last_num + 1)
     db.session.add(order)
     db.session.flush()
 
@@ -393,7 +599,7 @@ def submit_order():
         ))
 
     db.session.commit()
-    return jsonify({'success': True, 'order_id': order.id})
+    return jsonify({'success': True, 'order_number': order.order_number, 'order_id': order.id})
 
 # ─── View Orders ───
 
@@ -431,7 +637,12 @@ def update_status(id):
             for item in items:
                 prod = Product.query.filter_by(name=item.product_name).first()
                 if prod:
-                    prod.stock = max(0, prod.stock - item.quantity)
+                    qty = item.quantity
+                    if prod.unit_wholesale and item.unit == prod.unit_wholesale:
+                        qty = qty * (prod.qty_per_carton or 1)
+                    elif prod.unit_pallet and item.unit == prod.unit_pallet:
+                        qty = qty * (prod.qty_per_pallet or 1)
+                    prod.stock = max(0, prod.stock - qty)
         db.session.commit()
     return redirect(url_for('view_orders'))
 
@@ -444,6 +655,61 @@ def delete_order(id):
         db.session.delete(order)
         db.session.commit()
     return redirect(url_for('view_orders'))
+
+@app.route('/admin/backup/export')
+@admin_required
+def backup_export():
+    import json
+    data = {
+        'products': [{'id':p.id,'name':p.name,'price':p.price,'price_semi':p.price_semi,'unit':p.unit,'category':p.category,'available':p.available,'stock':p.stock,'unit_wholesale':p.unit_wholesale,'qty_per_carton':p.qty_per_carton,'image_url':p.image_url,'unit_pallet':p.unit_pallet,'qty_per_pallet':p.qty_per_pallet} for p in Product.query.all()],
+        'shops': [{'id':s.id,'name':s.name,'code':s.code,'phone':s.phone,'address':s.address,'type':s.type} for s in Shop.query.all()],
+        'orders': [{'id':o.id,'shop_id':o.shop_id,'shop_name':o.shop_name,'notes':o.notes,'order_number':o.order_number,'total':o.total,'status':o.status,'created_at':str(o.created_at)} for o in Order.query.all()],
+        'order_items': [{'id':i.id,'order_id':i.order_id,'product_name':i.product_name,'quantity':i.quantity,'price':i.price,'unit':i.unit} for i in OrderItem.query.all()],
+    }
+    filename = f'backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+    return app.response_class(json.dumps(data, ensure_ascii=False, indent=2), mimetype='application/json', headers={'Content-Disposition': f'attachment; filename={filename}'})
+
+@app.route('/admin/backup/import', methods=['POST'])
+@admin_required
+def backup_import():
+    file = request.files.get('file')
+    if not file or not file.filename.endswith('.json'):
+        flash('يرجى رفع ملف JSON', 'error')
+        return redirect(url_for('admin'))
+    try:
+        import json
+        data = json.load(file)
+    except Exception as e:
+        flash(f'خطأ في قراءة الملف: {str(e)}', 'error')
+        return redirect(url_for('admin'))
+    if 'products' not in data:
+        flash('ملف غير صالح', 'error')
+        return redirect(url_for('admin'))
+    try:
+        from sqlalchemy import text
+        db.session.rollback()
+        db.session.execute(text("DELETE FROM order_items"))
+        db.session.execute(text("DELETE FROM orders"))
+        db.session.execute(text("DELETE FROM shops"))
+        db.session.execute(text("DELETE FROM products"))
+        for p in data.get('products',[]):
+            db.session.add(Product(id=p['id'],name=p['name'],price=p['price'],price_semi=p.get('price_semi',0),unit=p.get('unit','قطعة'),category=p.get('category','عام'),available=p.get('available',1),stock=p.get('stock',0),unit_wholesale=p.get('unit_wholesale'),qty_per_carton=p.get('qty_per_carton',1),image_url=p.get('image_url'),unit_pallet=p.get('unit_pallet'),qty_per_pallet=p.get('qty_per_pallet')))
+        for s in data.get('shops',[]):
+            db.session.add(Shop(id=s['id'],name=s['name'],code=s['code'],phone=s.get('phone',''),address=s.get('address',''),type=s.get('type','تاجر جملة')))
+        for o in data.get('orders',[]):
+            db.session.add(Order(id=o['id'],shop_id=o['shop_id'],shop_name=o.get('shop_name'),notes=o.get('notes'),order_number=o.get('order_number'),total=o.get('total',0),status=o.get('status','جديد'),created_at=datetime.fromisoformat(o['created_at']) if o.get('created_at') else datetime.now()))
+        for i in data.get('order_items',[]):
+            db.session.add(OrderItem(id=i['id'],order_id=i['order_id'],product_name=i['product_name'],quantity=i.get('quantity',0),price=i.get('price',0),unit=i.get('unit','')))
+        db.session.execute(text("ALTER SEQUENCE products_id_seq RESTART WITH 1000"))
+        db.session.execute(text("ALTER SEQUENCE shops_id_seq RESTART WITH 1000"))
+        db.session.execute(text("ALTER SEQUENCE orders_id_seq RESTART WITH 1000"))
+        db.session.execute(text("ALTER SEQUENCE order_items_id_seq RESTART WITH 1000"))
+        db.session.commit()
+        flash('✅ تم استعادة النسخة الاحتياطية بنجاح', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'خطأ: {str(e)}', 'error')
+    return redirect(url_for('admin'))
 
 @app.route('/admin/change-password', methods=['GET', 'POST'])
 @admin_required

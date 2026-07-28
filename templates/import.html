@@ -6,8 +6,8 @@
 <title>استيراد - {{ shop_name }}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
-:root,[data-theme="dark"]{--bg:linear-gradient(rgba(11,14,20,0.82),rgba(26,31,46,0.88)),url('https://images.unsplash.com/photo-1768176136613-96a7bfc0049e?fm=jpg&q=60&w=1920');--topbar-bg:rgba(11,14,20,0.55);--card-bg:rgba(22,27,34,0.8);--card-border:rgba(255,255,255,0.04);--text:#fff;--text-muted:#8B949E;--text-dim:#484F58;--accent:#58A6FF;--accent-green:#2EA043;--accent-red:#DA3633;--btn-bg:rgba(48,54,61,0.5);--btn-hover:rgba(88,166,255,0.15);--input-bg:rgba(13,17,23,0.8);--input-border:rgba(48,54,61,0.5);--border:rgba(255,255,255,0.08)}
-[data-theme="light"]{--bg:linear-gradient(rgba(255,255,255,0.88),rgba(240,244,248,0.92)),url('https://images.unsplash.com/photo-1768176136613-96a7bfc0049e?fm=jpg&q=60&w=1920');--topbar-bg:rgba(255,255,255,0.7);--card-bg:rgba(255,255,255,0.92);--card-border:rgba(0,0,0,0.06);--text:#1a1f2e;--text-muted:#57606a;--text-dim:#8B949E;--accent:#1F6FEB;--accent-green:#1a7f37;--accent-red:#cf222e;--btn-bg:rgba(0,0,0,0.06);--btn-hover:rgba(31,111,235,0.1);--input-bg:rgba(255,255,255,0.9);--input-border:rgba(0,0,0,0.15);--border:rgba(0,0,0,0.08)}
+:root,[data-theme="dark"]{--bg:linear-gradient(rgba(11,14,20,0.82),rgba(26,31,46,0.88)),url('https://i.ibb.co/CKmyQ9s0/Gemini-Generated-Image-6fnhxl6fnhxl6fnh.png');--topbar-bg:rgba(11,14,20,0.55);--card-bg:rgba(22,27,34,0.8);--card-border:rgba(255,255,255,0.04);--text:#fff;--text-muted:#8B949E;--text-dim:#484F58;--accent:#58A6FF;--accent-green:#2EA043;--accent-red:#DA3633;--btn-bg:rgba(48,54,61,0.5);--btn-hover:rgba(88,166,255,0.15);--input-bg:rgba(13,17,23,0.8);--input-border:rgba(48,54,61,0.5);--border:rgba(255,255,255,0.08)}
+[data-theme="light"]{--bg:linear-gradient(rgba(255,255,255,0.88),rgba(240,244,248,0.92)),url('https://i.ibb.co/CKmyQ9s0/Gemini-Generated-Image-6fnhxl6fnhxl6fnh.png');--topbar-bg:rgba(255,255,255,0.7);--card-bg:rgba(255,255,255,0.92);--card-border:rgba(0,0,0,0.06);--text:#1a1f2e;--text-muted:#57606a;--text-dim:#8B949E;--accent:#1F6FEB;--accent-green:#1a7f37;--accent-red:#cf222e;--btn-bg:rgba(0,0,0,0.06);--btn-hover:rgba(31,111,235,0.1);--input-bg:rgba(255,255,255,0.9);--input-border:rgba(0,0,0,0.15);--border:rgba(0,0,0,0.08)}
 *{margin:0;padding:0;box-sizing:border-box}
 /* info */
 .info-btn{position:fixed;bottom:16px;left:16px;z-index:999;width:36px;height:36px;border-radius:50%;background:var(--topbar-bg);backdrop-filter:blur(8px);border:1px solid var(--border);color:var(--text-muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
@@ -49,6 +49,13 @@ input[type=file]:hover{border-color:var(--accent)}
 .hint strong{color:var(--accent)}
 .back{display:block;text-align:center;margin-top:14px;color:var(--text-muted);text-decoration:none;font-size:13px}
 .back:hover{color:var(--accent)}
+@media(max-width:768px){
+.topbar{flex-wrap:wrap;gap:4px;padding:10px 12px}
+.topbar>div:first-child{display:flex;flex-wrap:wrap;gap:3px}
+.topbar a{font-size:11px;margin-right:6px}
+.topbar h1{font-size:13px}
+.container{padding:8px}
+}
 </style>
 </head>
 <body>
@@ -80,22 +87,27 @@ input[type=file]:hover{border-color:var(--accent)}
       <input type="hidden" name="type" value="products">
       <label>ملف Excel للمنتجات</label>
       <input type="file" name="file" accept=".xlsx" required>
-      <div class="hint"><strong>تنسيق الملف:</strong><br>
-        <strong>name</strong> — اسم المنتج<br>
-        <strong>price</strong> — السعر<br>
-        <strong>unit</strong> — الوحدة (اختياري)<br>
-        <strong>category</strong> — التصنيف (اختياري)<br>
-        <strong>stock</strong> — المخزون (اختياري)</div>
+      <div class="hint"><strong>تنسيق الملف (عربي أو إنجليزي):</strong><br>
+        <strong>الاسم</strong> أو <strong>name</strong> — اسم المنتج<br>
+        <strong>سعر الجملة</strong> أو <strong>price</strong> — سعر الجملة<br>
+        <strong>سعر التجزئة</strong> أو <strong>سعر نصف الجملة</strong> أو <strong>price_semi</strong> — سعر التجزئة (اختياري — اتركه فارغاً إذا لم يكن)<br>
+        <strong>الوحدة</strong> أو <strong>unit</strong> — الوحدة (اختياري)<br>
+        <strong>وحدة الجملة</strong> أو <strong>unit_wholesale</strong> — وحدة الجملة إذا كانت مختلفة (اختياري)<br>
+        <strong>عدد العلب</strong> أو <strong>qty_per_carton</strong> — عدد العلب في الكرتون (اختياري — الافتراضي 1)<br>
+        <strong>رابط الصورة</strong> أو <strong>image_url</strong> — رابط صورة المنتج (اختياري)<br>
+        <strong>التصنيف</strong> أو <strong>category</strong> — التصنيف (اختياري)<br>
+        <strong>المخزون</strong> أو <strong>stock</strong> — المخزون (اختياري)</div>
       <button type="submit" class="btn-up">📥 استيراد المنتجات</button>
     </form>
     <form method="POST" enctype="multipart/form-data" id="formShops" class="tab-content">
       <input type="hidden" name="type" value="shops">
       <label>ملف Excel للمحلات</label>
       <input type="file" name="file" accept=".xlsx" required>
-      <div class="hint"><strong>تنسيق الملف:</strong><br>
-        <strong>name</strong> — اسم المحل<br>
-        <strong>phone</strong> — الهاتف (اختياري)<br>
-        <strong>address</strong> — العنوان (اختياري)<br>
+      <div class="hint"><strong>تنسيق الملف (عربي أو إنجليزي):</strong><br>
+        <strong>name</strong> أو <strong>الاسم</strong> — اسم المحل<br>
+        <strong>phone</strong> أو <strong>الهاتف</strong> — الهاتف (اختياري)<br>
+        <strong>address</strong> أو <strong>العنوان</strong> — العنوان (اختياري)<br>
+        <strong>type</strong> أو <strong>النوع</strong> — تاجر جملة أو تاجر تجزئة (اختياري — الافتراضي تاجر جملة)<br>
         <em>❕ كود المحل يُنشأ تلقائياً</em></div>
       <button type="submit" class="btn-up">📥 استيراد المحلات</button>
     </form>

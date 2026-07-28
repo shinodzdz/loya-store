@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
 :root,[data-theme="dark"]{
---bg:linear-gradient(rgba(11,14,20,0.82),rgba(26,31,46,0.88)),url('https://images.unsplash.com/photo-1768176136613-96a7bfc0049e?fm=jpg&q=60&w=1920');
+--bg:linear-gradient(rgba(11,14,20,0.82),rgba(26,31,46,0.88)),url('https://i.ibb.co/CKmyQ9s0/Gemini-Generated-Image-6fnhxl6fnhxl6fnh.png');
 --card-bg:rgba(22,27,34,0.8);
 --card-border:rgba(255,255,255,0.04);
 --topbar-bg:rgba(11,14,20,0.55);
@@ -25,7 +25,7 @@
 --border-light:rgba(48,54,61,0.4);
 }
 [data-theme="light"]{
---bg:linear-gradient(rgba(255,255,255,0.88),rgba(240,244,248,0.92)),url('https://images.unsplash.com/photo-1768176136613-96a7bfc0049e?fm=jpg&q=60&w=1920');
+--bg:linear-gradient(rgba(255,255,255,0.88),rgba(240,244,248,0.92)),url('https://i.ibb.co/CKmyQ9s0/Gemini-Generated-Image-6fnhxl6fnhxl6fnh.png');
 --card-bg:rgba(255,255,255,0.92);
 --card-border:rgba(0,0,0,0.06);
 --topbar-bg:rgba(255,255,255,0.7);
@@ -72,6 +72,9 @@ input:focus{outline:none;border-color:var(--accent)}
 .btn-sm{padding:5px 12px;border-radius:8px;font-size:12px;text-decoration:none;font-weight:600;transition:all 0.2s;display:inline-block;margin-left:4px}
 .btn-del{background:rgba(218,54,51,0.15);color:var(--accent-red)}
 .btn-del:hover{background:rgba(218,54,51,0.25)}
+.cat-btn{padding:6px 14px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-muted);font-size:12px;cursor:pointer;font-family:'Cairo',sans-serif;transition:all 0.2s}
+.cat-btn:hover{border-color:var(--accent);color:var(--accent)}
+.cat-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .btn-tog{background:var(--btn-bg);color:var(--text-muted)}
 .btn-tog:hover{background:var(--btn-hover)}
 .btn-edit{background:var(--btn-hover);color:var(--accent)}
@@ -82,6 +85,18 @@ td{padding:10px 8px;border-bottom:1px solid var(--border-light);color:var(--text
 .avail{color:var(--accent-green)}
 .unavail{color:var(--accent-red)}
 .empty{color:var(--text-dim);font-size:14px;text-align:center;padding:30px}
+@media(max-width:768px){
+.topbar{flex-wrap:wrap;gap:4px;padding:10px 12px}
+.topbar>div:first-child{display:flex;flex-wrap:wrap;gap:3px}
+.topbar a{font-size:11px;margin-right:6px}
+.topbar h1{font-size:13px}
+.container{padding:8px}
+table{font-size:11px}
+td,th{padding:5px 3px}
+}
+@media(max-width:480px){
+.hide-mobile{display:none}
+}
 </style>
 </head>
 <body>
@@ -103,13 +118,19 @@ td{padding:10px 8px;border-bottom:1px solid var(--border-light);color:var(--text
 <div class="container">
   <div class="card">
     <h2>➕ إضافة منتج جديد</h2>
-    <form method="POST">
-      <input type="text" name="name" placeholder="اسم المنتج" required style="width:220px">
-      <input type="number" step="0.01" name="price" placeholder="السعر" required style="width:100px">
-      <input type="number" step="0.5" name="stock" placeholder="المخزون" value="0" style="width:90px">
-      <input type="text" name="unit" placeholder="الوحدة" value="قطعة" style="width:100px">
-      <input type="text" name="category" placeholder="التصنيف" value="عام" style="width:120px">
-      <button type="submit" class="btn-add">إضافة</button>
+    <form method="POST" style="display:flex;flex-wrap:wrap;gap:8px;align-items:end">
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">المنتج</label><input type="text" name="name" placeholder="اسم المنتج" required style="width:140px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">سعر الجملة</label><input type="number" step="0.01" name="price" placeholder="0.00" required style="width:100px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">سعر التجزئة</label><input type="number" step="0.01" name="price_semi" placeholder="0.00" value="0" style="width:100px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">المخزون</label><input type="number" step="0.5" name="stock" placeholder="0" value="0" style="width:80px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">الوحدة</label><input type="text" name="unit" placeholder="قطعة" value="قطعة" style="width:80px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">وحدة الجملة</label><input type="text" name="unit_wholesale" placeholder="اختياري" style="width:100px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">عدد/كرتون</label><input type="number" name="qty_per_carton" placeholder="1" value="1" style="width:70px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">وحدة البالتة</label><input type="text" name="unit_pallet" placeholder="بالتة" value="" style="width:80px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">عدد/بالتة</label><input type="number" name="qty_per_pallet" placeholder="0" value="0" style="width:70px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">رابط الصورة</label><input type="url" name="image_url" placeholder="https://..." style="width:130px"></div>
+      <div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:2px">التصنيف</label><input type="text" name="category" placeholder="عام" value="عام" style="width:80px"></div>
+      <button type="submit" class="btn-add" style="height:fit-content">إضافة</button>
     </form>
     <div style="margin-top:10px;text-align:center;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
       <a href="{{ url_for('import_excel') }}" style="padding:8px 18px;background:var(--btn-hover);border:none;border-radius:10px;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block">📥 استيراد من Excel</a>
@@ -118,15 +139,35 @@ td{padding:10px 8px;border-bottom:1px solid var(--border-light);color:var(--text
   </div>
   <div class="card">
     <h2>📋 قائمة المنتجات</h2>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="catFilters">
+      <button class="cat-btn active" onclick="filterCat('all',this)">الكل</button>
+      {% set cats = [] %}
+      {% for p in products %}{% if p.category not in cats %}{% set _ = cats.append(p.category) %}{% endif %}{% endfor %}
+      {% for c in cats|sort %}
+      <button class="cat-btn" onclick='filterCat({{ c|tojson }},this)'>{{ c }}</button>
+      {% endfor %}
+    </div>
     {% if products %}
+    <form method="POST" action="{{ url_for('bulk_delete_products') }}" onsubmit="return confirm('حذف المنتجات المحددة نهائياً؟')" style="margin-bottom:10px;display:flex;gap:10px;align-items:center" id="bulkForm">
+      <input type="checkbox" onclick="for(var c of document.querySelectorAll('.sel'))c.checked=this.checked" id="selAll" style="width:auto">
+      <label for="selAll" style="margin:0;font-size:13px">تحديد الكل</label>
+      <button type="submit" class="btn-sm btn-del" style="padding:6px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'Cairo',sans-serif">🗑️ حذف المحدد</button>
+    </form>
     <table>
-      <tr><th>الاسم</th><th>السعر</th><th>المخزون</th><th>الوحدة</th><th>التصنيف</th><th>الحالة</th><th></th></tr>
+      <tr><th></th><th>الصورة</th><th>الاسم</th><th>سعر الجملة</th><th>سعر التجزئة</th><th>المخزون</th><th>الوحدة</th><th>وحدة الجملة</th><th>عدد/كرتون</th><th>وحدة البالتة</th><th>عدد/بالتة</th><th>التصنيف</th><th>الحالة</th><th></th></tr>
       {% for p in products %}
-      <tr>
+      <tr data-cat="{{ p.category|replace('"','') }}">
+        <td><input type="checkbox" name="ids" value="{{ p.id }}" class="sel" form="bulkForm" style="width:auto"></td>
+        <td>{% if p.image_url %}<img src="{{ p.image_url }}" alt="" style="width:36px;height:36px;border-radius:8px;object-fit:cover">{% else %}<span style="color:var(--text-dim);font-size:18px">📦</span>{% endif %}</td>
         <td style="font-weight:600">{{ p.name }}</td>
         <td>{{ '%.2f'|format(p.price) }} د.ج</td>
+        <td style="color:var(--text-muted)">{{ '%.2f'|format(p.price_semi) if p.price_semi > 0 else '—' }} د.ج</td>
         <td style="font-weight:700;color:{{ 'var(--accent-green)' if p.stock>0 else 'var(--accent-red)' }}">{{ '%.1f'|format(p.stock) if p.stock else '0' }}</td>
         <td style="color:var(--text-muted)">{{ p.unit }}</td>
+        <td style="color:var(--text-muted)">{{ p.unit_wholesale or '—' }}</td>
+        <td style="color:var(--text-muted)">{{ p.qty_per_carton if p.unit_wholesale else '—' }}</td>
+        <td style="color:var(--text-muted)">{{ p.unit_pallet or '—' }}</td>
+        <td style="color:var(--text-muted)">{{ p.qty_per_pallet if p.unit_pallet else '—' }}</td>
         <td style="color:var(--text-muted)">{{ p.category }}</td>
         <td class="{{ 'avail' if p.available and p.stock>0 else 'unavail' }}">{{ 'متاح' if p.available and p.stock>0 else 'غير متاح' if not p.available else 'نفذ' }}</td>
         <td>
@@ -144,6 +185,7 @@ td{padding:10px 8px;border-bottom:1px solid var(--border-light);color:var(--text
 </div>
 <script>
 var prods=[{% for p in products %}{n:{{ p.name|tojson }},price:{{ p.price }},stock:{{ p.stock|int }},unit:{{ p.unit|tojson }},cat:{{ p.category|tojson }},avail:{{ '1' if p.available and p.stock>0 else '0' }}}{% if not loop.last %},{% endif %}{% endfor %}];
+function filterCat(cat,btn){document.querySelectorAll('.cat-btn').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');document.querySelectorAll('tr[data-cat]').forEach(function(r){r.style.display=(cat==='all'||r.getAttribute('data-cat')===cat)?'':'none'})}
 (function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);document.getElementById('themeBtn').textContent=t==='dark'?'🌙':'☀️'})();
 function toggleTheme(){var r=document.documentElement,n=r.getAttribute('data-theme')==='dark'?'light':'dark';r.setAttribute('data-theme',n);localStorage.setItem('theme',n);document.getElementById('themeBtn').textContent=n==='dark'?'🌙':'☀️'}
 function printProducts(){var d=new Date();var ds=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0')+' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');var h='<html dir=rtl><head><meta charset=UTF-8><title>المنتجات - {{ shop_name }}</title><style>body{font-family:sans-serif;padding:30px}h1{font-size:20px;margin-bottom:2px}.date{color:#888;font-size:13px;margin-bottom:16px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#f0f0f0;padding:8px 10px;text-align:right;border:1px solid #ddd}td{padding:8px 10px;border:1px solid #ddd}.yes{color:#1a7f37;font-weight:700}.no{color:#d33}.footer{margin-top:20px;font-size:11px;color:#999;text-align:center}</style></head><body><h1>📦 {{ shop_name }}</h1><div class=date>📅 '+ds+'</div><table><tr><th>#</th><th>المنتج</th><th>السعر</th><th>المخزون</th><th>الوحدة</th><th>التصنيف</th><th>الحالة</th></tr>';prods.forEach(function(p,i){h+='<tr><td>'+(i+1)+'</td><td>'+p.n+'</td><td>'+p.price.toFixed(2)+' د.ج</td><td>'+p.stock+'</td><td>'+p.unit+'</td><td>'+p.cat+'</td><td class="'+(p.avail?'yes':'no')+'">'+(p.avail?'متاح':'غير متاح')+'</td></tr>'});h+='</table><div class=footer>تمت الطباعة في: '+ds+'</div></body></html>';var w=window.open('','_blank');w.document.write(h);w.document.close()}
