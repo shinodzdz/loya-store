@@ -688,7 +688,7 @@ def backup_import():
     try:
         from sqlalchemy import text
         db.session.rollback()
-        db.session.execute(text('TRUNCATE TABLE order_items, orders, shops, products RESTART IDENTITY CASCADE'))
+        db.session.execute(text('TRUNCATE TABLE order_items, orders, shops, products CASCADE'))
         db.session.commit()
         for p in data.get('products',[]):
             db.session.add(Product(id=p['id'],name=p['name'],price=p['price'],price_semi=p.get('price_semi',0),unit=p.get('unit','قطعة'),category=p.get('category','عام'),available=p.get('available',1),stock=p.get('stock',0),unit_wholesale=p.get('unit_wholesale'),qty_per_carton=p.get('qty_per_carton',1),image_url=p.get('image_url'),unit_pallet=p.get('unit_pallet'),qty_per_pallet=p.get('qty_per_pallet')))
@@ -698,10 +698,6 @@ def backup_import():
             db.session.add(Order(id=o['id'],shop_id=o['shop_id'],shop_name=o.get('shop_name'),notes=o.get('notes'),order_number=o.get('order_number'),total=o.get('total',0),status=o.get('status','جديد'),created_at=datetime.fromisoformat(o['created_at']) if o.get('created_at') else datetime.now()))
         for i in data.get('order_items',[]):
             db.session.add(OrderItem(id=i['id'],order_id=i['order_id'],product_name=i['product_name'],quantity=i.get('quantity',0),price=i.get('price',0),unit=i.get('unit','')))
-        for tbl in ['products','shops','orders','order_items']:
-            seq = db.session.execute(text(f"SELECT pg_get_serial_sequence('{tbl}', 'id')")).scalar()
-            if seq:
-                db.session.execute(text(f"ALTER SEQUENCE {seq} RESTART WITH {db.session.execute(text(f'SELECT MAX(id)+1 FROM {tbl}')).scalar()}"))
         db.session.commit()
         flash('✅ تم استعادة النسخة الاحتياطية بنجاح', 'success')
     except Exception as e:
