@@ -19,42 +19,6 @@ app.config['PUBLIC_URL'] = os.environ.get('PUBLIC_URL', '')
 
 db = SQLAlchemy(app)
 
-with app.app_context():
-    db.create_all()
-    from sqlalchemy import inspect, text
-    inspector = inspect(db.engine)
-    prod_cols = [c['name'] for c in inspector.get_columns('products')]
-    shop_cols = [c['name'] for c in inspector.get_columns('shops')]
-    if 'price_semi' not in prod_cols:
-        db.session.execute(text('ALTER TABLE products ADD COLUMN price_semi FLOAT DEFAULT 0'))
-        db.session.commit()
-    if 'type' not in shop_cols:
-        db.session.execute(text("ALTER TABLE shops ADD COLUMN type VARCHAR(20) DEFAULT 'تاجر جملة'"))
-        db.session.commit()
-    if 'unit_wholesale' not in prod_cols:
-        db.session.execute(text("ALTER TABLE products ADD COLUMN unit_wholesale VARCHAR(50)"))
-        db.session.commit()
-    if 'qty_per_carton' not in prod_cols:
-        db.session.execute(text("ALTER TABLE products ADD COLUMN qty_per_carton INTEGER DEFAULT 1"))
-        db.session.commit()
-    if 'image_url' not in prod_cols:
-        db.session.execute(text("ALTER TABLE products ADD COLUMN image_url VARCHAR(500)"))
-        db.session.commit()
-    if 'unit_pallet' not in prod_cols:
-        db.session.execute(text("ALTER TABLE products ADD COLUMN unit_pallet VARCHAR(50)"))
-        db.session.commit()
-    if 'qty_per_pallet' not in prod_cols:
-        db.session.execute(text("ALTER TABLE products ADD COLUMN qty_per_pallet INTEGER"))
-        db.session.commit()
-    order_cols = [c['name'] for c in inspector.get_columns('orders')]
-    if 'order_number' not in order_cols:
-        db.session.execute(text("ALTER TABLE orders ADD COLUMN order_number INTEGER"))
-        db.session.commit()
-        all_ids = db.session.execute(text("SELECT id FROM orders ORDER BY created_at, id")).fetchall()
-        for i, (oid,) in enumerate(all_ids, 1):
-            db.session.execute(text("UPDATE orders SET order_number = :num WHERE id = :oid"), {'num': i, 'oid': oid})
-        db.session.commit()
-
 class Admin(db.Model):
     __tablename__ = 'admins'
     id = db.Column(db.Integer, primary_key=True)
@@ -108,29 +72,79 @@ class OrderItem(db.Model):
     price = db.Column(db.Float, nullable=False)
     unit = db.Column(db.String(50))
 
-def init_db():
+with app.app_context():
     db.create_all()
     if not Admin.query.first():
         db.session.add(Admin(username='admin', password=hashlib.sha256('admin123'.encode()).hexdigest()))
         db.session.commit()
-    try:
-        from sqlalchemy import text
-        db.session.execute(text('ALTER TABLE products ADD COLUMN stock FLOAT DEFAULT 0'))
-        db.session.commit()
-    except:
-        db.session.rollback()
-
-with app.app_context():
-    init_db()
-    try:
-        from sqlalchemy import inspect, text
-        inspector = inspect(db.engine)
-        prod_cols = [c['name'] for c in inspector.get_columns('products')]
-        if 'image_url' not in prod_cols:
-            db.session.execute(text("ALTER TABLE products ADD COLUMN image_url VARCHAR(500)"))
-            db.session.commit()
-    except:
-        db.session.rollback()
+    from sqlalchemy import inspect, text
+    for tbl in ('products','shops','orders'):
+        try:
+            inspector = inspect(db.engine)
+            cols = [c['name'] for c in inspector.get_columns(tbl)]
+        except:
+            continue
+        if tbl == 'products':
+            if 'stock' not in cols:
+                try:
+                    db.session.execute(text('ALTER TABLE products ADD COLUMN stock FLOAT DEFAULT 0'))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+            if 'price_semi' not in cols:
+                try:
+                    db.session.execute(text('ALTER TABLE products ADD COLUMN price_semi FLOAT DEFAULT 0'))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+            if 'unit_wholesale' not in cols:
+                try:
+                    db.session.execute(text("ALTER TABLE products ADD COLUMN unit_wholesale VARCHAR(50)"))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+            if 'qty_per_carton' not in cols:
+                try:
+                    db.session.execute(text("ALTER TABLE products ADD COLUMN qty_per_carton INTEGER DEFAULT 1"))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+            if 'image_url' not in cols:
+                try:
+                    db.session.execute(text("ALTER TABLE products ADD COLUMN image_url VARCHAR(500)"))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+            if 'unit_pallet' not in cols:
+                try:
+                    db.session.execute(text("ALTER TABLE products ADD COLUMN unit_pallet VARCHAR(50)"))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+            if 'qty_per_pallet' not in cols:
+                try:
+                    db.session.execute(text("ALTER TABLE products ADD COLUMN qty_per_pallet INTEGER"))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+        if tbl == 'shops':
+            if 'type' not in cols:
+                try:
+                    db.session.execute(text("ALTER TABLE shops ADD COLUMN type VARCHAR(20) DEFAULT 'تاجر جملة'"))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+        if tbl == 'orders':
+            if 'order_number' not in cols:
+                try:
+                    db.session.execute(text("ALTER TABLE orders ADD COLUMN order_number INTEGER"))
+                    db.session.commit()
+                    all_ids = db.session.execute(text("SELECT id FROM orders ORDER BY created_at, id")).fetchall()
+                    for i, (oid,) in enumerate(all_ids, 1):
+                        db.session.execute(text("UPDATE orders SET order_number = :num WHERE id = :oid"), {'num': i, 'oid': oid})
+                    db.session.commit()
+                except:
+                    db.session.rollback()
 
 def get_public_url():
     if app.config['PUBLIC_URL']:
