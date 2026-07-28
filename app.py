@@ -504,6 +504,7 @@ def import_excel():
                         col_map['type'] = h
                 if 'name' not in col_map:
                     return render_template('import.html', error='لم يتم العثور على عمود "الاسم" أو "name" في الملف')
+                existing_codes = set(row[0] for row in db.session.query(Shop.code).all())
                 for row in rows[1:]:
                     vals = [str(v).strip() if v else '' for v in row]
                     name = vals[headers.index(col_map['name'])]
@@ -513,8 +514,9 @@ def import_excel():
                     address = vals[headers.index(col_map['address'])] if 'address' in col_map and vals[headers.index(col_map['address'])] else ''
                     shop_type = vals[headers.index(col_map['type'])] if 'type' in col_map and vals[headers.index(col_map['type'])] else 'تاجر جملة'
                     code = generate_code()
-                    while Shop.query.filter_by(code=code).first():
+                    while code in existing_codes:
                         code = generate_code()
+                    existing_codes.add(code)
                     db.session.add(Shop(name=name, code=code, phone=phone, address=address, type=shop_type))
                     added += 1
             db.session.commit()
