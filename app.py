@@ -698,6 +698,11 @@ def backup_import():
             db.session.add(Order(id=o['id'],shop_id=o['shop_id'],shop_name=o.get('shop_name'),notes=o.get('notes'),order_number=o.get('order_number'),total=o.get('total',0),status=o.get('status','جديد'),created_at=datetime.fromisoformat(o['created_at']) if o.get('created_at') else datetime.now()))
         for i in data.get('order_items',[]):
             db.session.add(OrderItem(id=i['id'],order_id=i['order_id'],product_name=i['product_name'],quantity=i.get('quantity',0),price=i.get('price',0),unit=i.get('unit','')))
+        for tbl in ['products','shops','orders','order_items']:
+            try:
+                db.session.execute(text(f"SELECT setval('{tbl}_id_seq', COALESCE((SELECT MAX(id) FROM {tbl}), 1))"))
+            except:
+                pass
         db.session.commit()
         flash('✅ تم استعادة النسخة الاحتياطية بنجاح', 'success')
     except Exception as e:
