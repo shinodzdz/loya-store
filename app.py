@@ -145,6 +145,13 @@ with app.app_context():
                     db.session.commit()
                 except:
                     db.session.rollback()
+    for tbl in ['products','shops','orders','order_items']:
+        try:
+            max_id = db.session.execute(text(f'SELECT COALESCE(MAX(id),0)+1 FROM {tbl}')).scalar()
+            db.session.execute(text(f"ALTER SEQUENCE {tbl}_id_seq RESTART WITH {max_id}"))
+        except:
+            pass
+    db.session.commit()
 
 def get_public_url():
     if app.config['PUBLIC_URL']:
